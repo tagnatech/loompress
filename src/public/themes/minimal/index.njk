@@ -1,0 +1,26 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+{% for post in posts %}
+<div class="post-list-item">
+  <a href="/{{ post.slug }}">
+    <span class="post-list-item__title">{{ post.title }}</span>
+    <span class="post-list-item__date">{{ post.published_at | formatDate('DD MMM YYYY') }}</span>
+  </a>
+</div>
+{% else %}
+  <p style="color: var(--color-muted); padding: 3rem 0;">No posts yet.</p>
+{% endfor %}
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="{% if page == 2 %}/{% else %}/page/{{ page - 1 }}{% endif %}">&larr; Newer</a>
+  {% endif %}
+  <span>{{ page }} / {{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/page/{{ page + 1 }}">Older &rarr;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

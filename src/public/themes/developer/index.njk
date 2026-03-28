@@ -1,0 +1,28 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+{% for post in posts %}
+<article class="post-item">
+  <h2 class="post-item__title"><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+  <div class="post-item__meta">
+    <span><span class="label">date:</span> {{ post.published_at | formatDate('YYYY-MM-DD') }}</span>
+    {% if post.author_name %}<span><span class="label">author:</span> {{ post.author_name }}</span>{% endif %}
+    <span><span class="label">read:</span> {{ post.body | readTime }}</span>
+  </div>
+</article>
+{% else %}
+  <p style="color: var(--color-muted); padding: 3rem 0; text-align: center;">No posts yet.</p>
+{% endfor %}
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="{% if page == 2 %}/{% else %}/page/{{ page - 1 }}{% endif %}">&larr; newer</a>
+  {% endif %}
+  <span>{{ page }}/{{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/page/{{ page + 1 }}">older &rarr;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

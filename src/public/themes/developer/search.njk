@@ -1,0 +1,39 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div class="archive-header">
+  <h1>Search{% if query %}: "{{ query }}"{% endif %}</h1>
+  <form action="/search" method="GET" class="search-form">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search posts..." class="search-form__input">
+    <button type="submit" class="search-form__btn">Search</button>
+  </form>
+</div>
+
+{% if results.length %}
+  <p class="text-muted" style="margin-bottom: 1.5rem;">{{ total }} result{{ 's' if total != 1 }} found</p>
+  {% for post in results %}
+  <article class="post-card">
+    <h2 class="post-card__title"><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+    <div class="post-card__meta">
+      {% if post.author_name %}<span>{{ post.author_name }}</span>{% endif %}
+      {% if post.published_at %}<span>{{ post.published_at | formatDate }}</span>{% endif %}
+    </div>
+    <p class="post-card__excerpt">{{ post.headline | safe }}</p>
+  </article>
+  {% endfor %}
+
+  {% if totalPages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+      <a href="/search?q={{ query }}&page={{ page - 1 }}">&laquo; Previous</a>
+    {% endif %}
+    <span>Page {{ page }} of {{ totalPages }}</span>
+    {% if page < totalPages %}
+      <a href="/search?q={{ query }}&page={{ page + 1 }}">Next &raquo;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+{% elif query %}
+  <p class="empty-state">No results found for "{{ query }}". Try different keywords.</p>
+{% endif %}
+{% endblock %}

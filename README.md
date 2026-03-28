@@ -27,8 +27,11 @@ One running instance serves multiple websites simultaneously. Each site gets its
 - **Taxonomy**: Categories (hierarchical) and tags per site.
 - **Post scheduling**: Set a future `published_at` date; a background job publishes on time.
 - **SEO built-in**: Per-post meta title, meta description, Open Graph tags, canonical URLs.
+- **Bundled SEO extension**: Auto-loaded `SEO Foundation` plugin adds sitemap coverage for pages/tags/categories, structured data, robots directives, and cleaner canonical handling for archive/search routes.
+- **AI autoblogging extension**: Auto-loaded `AI Autoblog` plugin schedules OpenRouter-powered strategy/writer/editor agents to create SEO-aware posts with featured images.
 - **RSS feed**: `/feed.xml` per site, auto-generated from published posts.
 - **Sitemap**: `/sitemap.xml` per site.
+- **Plugin support**: Load runtime plugins for admin routes, public routes, sidebar links, admin views, and static assets.
 - **Role-based access**: `superadmin`, `admin`, `author` roles with per-site permission scoping.
 - **Self-hosted**: Docker + Caddy. TLS auto-provisioned by Caddy via Let's Encrypt.
 
@@ -64,7 +67,26 @@ npm install
 
 ```bash
 cp .env.example .env
-# Edit .env — set DATABASE_URL, SESSION_SECRET
+# Edit .env — set DATABASE_URL, SESSION_SECRET (32+ chars)
+```
+
+You can also skip this step on a fresh install and let LoomPress create `.env` from the browser installer.
+
+LoomPress also creates a WordPress-style user asset area at `./assets` by default. Files placed there are served publicly at `/assets/...`.
+
+Optional for the bundled `AI Autoblog` plugin:
+
+```bash
+# Lets the plugin use an environment-level OpenRouter key by default
+echo OPENROUTER_API_KEY=your-key-here >> .env
+```
+
+Example asset paths:
+
+```text
+assets/images/logo.png -> /assets/images/logo.png
+assets/js/site.js      -> /assets/js/site.js
+assets/ts/demo.ts      -> /assets/ts/demo.ts
 ```
 
 ### 3. Run migrations
@@ -76,7 +98,7 @@ npm run migrate
 ### 4. Seed the first superadmin user
 
 ```bash
-npm run seed:admin -- --email admin@example.com --password changeme
+npm run seed:admin -- --email admin@example.com --password "change-me-now-123"
 ```
 
 ### 5. Start in development
@@ -85,7 +107,9 @@ npm run seed:admin -- --email admin@example.com --password changeme
 npm run dev
 ```
 
-Admin panel: `http://localhost:4100/admin/login`
+Fresh install: `http://localhost:4100/install/database`
+
+Admin panel after setup: `http://localhost:4100/admin/login`
 
 ---
 
@@ -97,10 +121,11 @@ Admin panel: `http://localhost:4100/admin/login`
 | [Database Schema](docs/database-schema.md) | All tables, columns, indexes, relationships |
 | [udiot Enhancements](docs/udiot-enhancements.md) | New `@tagna/udiot/server` module added for LoomPress |
 | [Admin Panel](docs/admin-panel.md) | Admin UI routes, views, editor, media library |
-| [Public Blog](docs/public-blog.md) | Blog routing, permalink patterns, RSS, sitemap |
+| [Public](docs/public.md) | Public routes, permalink patterns, RSS, sitemap |
 | [Multi-Site Setup](docs/multi-site.md) | How to add a new site, hostname routing, isolation |
 | [Deployment](docs/deployment.md) | Docker, Caddy, VPS deployment, environment variables |
 | [Development Guide](docs/development.md) | Local setup, project structure, coding conventions |
+| [Plugins](docs/plugins.md) | Runtime plugin loading, API surface, and sample plugin |
 
 ---
 
@@ -116,9 +141,11 @@ loompress/
 │   ├── auth/                   # Session, password, middleware guards
 │   ├── services/               # Business logic (PostService, SiteService, …)
 │   ├── admin/                  # Admin panel: controllers + Nunjucks views
-│   ├── public-blog/            # Public blog: controllers + Nunjucks views
+│   ├── public/                 # Public site: controllers + Nunjucks themes
+│   ├── plugins/                # Plugin loader/runtime types
 │   └── uploads/                # multer config, path resolution
 ├── docs/                       # Full documentation
+├── examples/                   # Sample plugins and integrations
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
@@ -130,4 +157,4 @@ loompress/
 
 ## License
 
-MIT © [Tagnatech](https://tagna.in)
+[MIT](LICENSE) © [Tagnatech](https://tagna.in)

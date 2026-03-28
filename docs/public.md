@@ -1,4 +1,4 @@
-# Public Blog
+# Public
 
 The public blog is served at the root path (`/`) of each site's domain. It is completely separate from the admin panel and requires no authentication. All pages are server-rendered on each request using Nunjucks templates.
 
@@ -34,7 +34,7 @@ Each site has a `permalink_pattern` setting that determines how post URLs are st
 | `dated` | `/:year/:month/:day/:slug` | `/2026/03/24/my-first-post` |
 | `category-slug` | `/:categorySlug/:slug` | `/engineering/my-first-post` |
 
-The permalink resolver in `src/public-blog/permalink.ts` generates and parses URLs according to the current site's setting. When a post is moved between categories or its slug is changed, old URLs should be handled with 301 redirects (planned feature).
+Permalink handling in `src/public/` follows the current site's permalink setting. When a post is moved between categories or its slug is changed, old URLs should be handled with 301 redirects (planned feature).
 
 ---
 
@@ -42,7 +42,7 @@ The permalink resolver in `src/public-blog/permalink.ts` generates and parses UR
 
 `GET /` and `GET /page/:n`
 
-Queries `cms_posts WHERE site_id = $siteId AND status = 'published' ORDER BY published_at DESC LIMIT 20 OFFSET ...`
+Queries `lp_posts WHERE site_id = $siteId AND status = 'published' ORDER BY published_at DESC LIMIT 20 OFFSET ...`
 
 Each post card in the list shows:
 - Featured image (if set)
@@ -61,7 +61,7 @@ Pagination links appear at the bottom when there are more than 20 published post
 
 `GET /:slug`
 
-Queries `cms_posts WHERE site_id = $siteId AND slug = $slug AND status = 'published'`.
+Queries `lp_posts WHERE site_id = $siteId AND slug = $slug AND status = 'published'`.
 
 Returns 404 if not found. Scheduled and private posts are not accessible via the public blog.
 
@@ -170,10 +170,10 @@ Cache keys are namespaced by `siteId` to ensure isolation between sites.
 
 ---
 
-## Public Blog Templates
+## Public Templates
 
 ```
-src/public-blog/views/
+src/public/themes/<theme>/
 ├── layout.njk       Base layout: site name, logo, nav, footer, head meta tags
 ├── index.njk        Post list: post cards grid + pagination
 ├── post.njk         Single post: title, meta, body HTML, prev/next nav
@@ -181,7 +181,7 @@ src/public-blog/views/
 └── tag.njk          Tag archive: heading + post list + pagination
 ```
 
-The public blog templates are intentionally minimal: clean typography, responsive layout, no third-party CSS or JS loaded. Sites can be themed via site-specific CSS overrides (planned feature: per-site custom CSS stored in `cms_sites`).
+The public templates are intentionally minimal: clean typography, responsive layout, no third-party CSS or JS loaded. Sites can be themed via built-in themes and site-specific CSS overrides stored in `lp_sites`.
 
 ---
 
@@ -199,3 +199,4 @@ Every public blog page includes:
 - [x] `/sitemap.xml` linked in `<head>` as `<link rel="sitemap">`
 - [x] `/feed.xml` linked in `<head>` as `<link rel="alternate" type="application/rss+xml">`
 - [x] `robots.txt` served at `/robots.txt` (allows all crawlers, points to sitemap)
+

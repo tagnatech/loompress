@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — LoomPress</title>
+  {{ (brandHeadHtml or defaultBrandHeadHtml) | safe }}
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="onboarding-body">
+  <main class="onboarding-shell">
+    <section class="onboarding-hero">
+      <p class="onboarding-hero__eyebrow">First run</p>
+      {% if onboardingState.requiresSiteCreation %}
+        <h1 class="onboarding-hero__title">Set up your blog in four steps</h1>
+        <p class="onboarding-hero__copy">
+          The database is ready. Now configure the first site, choose its theme and routing defaults,
+          and create the initial superadmin account.
+        </p>
+      {% else %}
+        <h1 class="onboarding-hero__title">Finish the admin setup</h1>
+        <p class="onboarding-hero__copy">
+          LoomPress found {{ onboardingState.existingSiteCount }} existing site{{ '' if onboardingState.existingSiteCount == 1 else 's' }}
+          but no admin account. Create the first superadmin to take control of the installation.
+        </p>
+      {% endif %}
+
+      <ol class="onboarding-steps">
+        {% if onboardingState.requiresSiteCreation %}
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">1</span>
+            <div>
+              <h2>Name the site</h2>
+              <p>Set the public hostname, base URL, site name, tagline, and optional logo.</p>
+            </div>
+          </li>
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">2</span>
+            <div>
+              <h2>Choose defaults</h2>
+              <p>Pick the initial theme, timezone, and permalink pattern before content is published.</p>
+            </div>
+          </li>
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">3</span>
+            <div>
+              <h2>Create the superadmin</h2>
+              <p>This account gets immediate access to the new site and full control over the installation.</p>
+            </div>
+          </li>
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">4</span>
+            <div>
+              <h2>Enter the dashboard</h2>
+              <p>LoomPress will sign you in and drop you into the admin as soon as setup finishes.</p>
+            </div>
+          </li>
+        {% else %}
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">1</span>
+            <div>
+              <h2>Reuse the existing site</h2>
+              <p>
+                Setup will continue with <strong>{{ onboardingState.existingSite.name if onboardingState.existingSite else 'the existing site' }}</strong>.
+                You can refine branding and theme options from the admin after sign-in.
+              </p>
+            </div>
+          </li>
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">2</span>
+            <div>
+              <h2>Create the first superadmin</h2>
+              <p>This restores access without requiring manual database repair.</p>
+            </div>
+          </li>
+          <li class="onboarding-step-card">
+            <span class="onboarding-step-card__number">3</span>
+            <div>
+              <h2>Continue in the admin</h2>
+              <p>After sign-in, you can switch sites and finish the rest of the configuration normally.</p>
+            </div>
+          </li>
+        {% endif %}
+      </ol>
+    </section>
+
+    <section class="onboarding-panel">
+      {% if flashMessages.success %}
+        {% for msg in flashMessages.success %}
+          <div class="alert alert--success">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if flashMessages.error %}
+        {% for msg in flashMessages.error %}
+          <div class="alert alert--error">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if onboardingError %}
+        <div class="alert alert--error">{{ onboardingError }}</div>
+      {% endif %}
+
+      <form method="POST" action="/onboarding" class="onboarding-form" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+        {% if onboardingState.requiresSiteCreation %}
+          <section class="onboarding-section">
+            <div class="onboarding-section__header">
+              <span class="onboarding-section__step">Step 1</span>
+              <h2>Site identity</h2>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="site_name">Site name</label>
+                <input id="site_name" name="site_name" type="text" required class="form-input" value="{{ values.site_name or '' }}" placeholder="LoomPress Local">
+              </div>
+              <div class="form-group">
+                <label for="site_slug">Site slug</label>
+                <input id="site_slug" name="site_slug" type="text" class="form-input" value="{{ values.site_slug or '' }}" placeholder="local">
+                <small class="form-help">Leave blank to generate it from the site name.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="site_hostname">Hostname</label>
+                <input id="site_hostname" name="site_hostname" type="text" required class="form-input" value="{{ values.site_hostname or suggestedHostname }}" placeholder="{{ suggestedHostname }}">
+                <small class="form-help">Use only the hostname, without protocol or port. Example: <code>localhost</code> or <code>blog.example.com</code>.</small>
+              </div>
+              <div class="form-group">
+                <label for="site_base_url">Base URL</label>
+                <input id="site_base_url" name="site_base_url" type="text" required class="form-input" value="{{ values.site_base_url or suggestedBaseUrl }}" placeholder="{{ suggestedBaseUrl }}">
+                <small class="form-help">Include protocol and port when needed. The hostname must match the field on the left.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="site_tagline">Tagline</label>
+                <input id="site_tagline" name="site_tagline" type="text" class="form-input" value="{{ values.site_tagline or '' }}" placeholder="Your first site on LoomPress">
+              </div>
+              <div class="form-group">
+                <label for="site_logo_url">Logo URL</label>
+                <input id="site_logo_url" name="site_logo_url" type="text" class="form-input" value="{{ values.site_logo_url or '' }}" placeholder="https://example.com/logo.svg or /assets/images/logo.svg">
+                <small class="form-help">Optional. You can use a remote URL, a file in <code>/assets/...</code>, or an uploaded image below. If left blank, LoomPress uses the built-in phoenix logo.</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="logo_file">Upload logo</label>
+              <input id="logo_file" name="logo_file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="form-input">
+              <small class="form-help">Accepted formats: JPG, PNG, WebP, GIF.</small>
+            </div>
+          </section>
+
+          <section class="onboarding-section">
+            <div class="onboarding-section__header">
+              <span class="onboarding-section__step">Step 2</span>
+              <h2>Site defaults</h2>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="site_theme">Theme</label>
+                <select id="site_theme" name="site_theme" class="form-input">
+                  {% for theme in themes %}
+                    <option value="{{ theme.name }}" {{ 'selected' if (values.site_theme or 'default') == theme.name }}>
+                      {{ theme.displayName }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="site_timezone">Timezone</label>
+                <select id="site_timezone" name="site_timezone" class="form-input">
+                  {% for timezone in timezones %}
+                    <option value="{{ timezone.value }}" {{ 'selected' if (values.site_timezone or 'UTC') == timezone.value }}>
+                      {{ timezone.label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="site_permalink_pattern">Permalink pattern</label>
+              <select id="site_permalink_pattern" name="site_permalink_pattern" class="form-input">
+                {% for option in permalinkOptions %}
+                  <option value="{{ option.value }}" {{ 'selected' if (values.site_permalink_pattern or 'slug') == option.value }}>
+                    {{ option.label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </section>
+        {% else %}
+          <section class="onboarding-section">
+            <div class="onboarding-section__header">
+              <span class="onboarding-section__step">Step 1</span>
+              <h2>Existing site</h2>
+            </div>
+
+            {% if onboardingState.existingSite %}
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Site name</label>
+                  <input type="text" class="form-input" value="{{ onboardingState.existingSite.name }}" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Hostname</label>
+                  <input type="text" class="form-input" value="{{ onboardingState.existingSite.hostname }}" readonly>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Theme</label>
+                  <input type="text" class="form-input" value="{{ onboardingState.existingSite.theme }}" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Timezone</label>
+                  <input type="text" class="form-input" value="{{ onboardingState.existingSite.timezone }}" readonly>
+                </div>
+              </div>
+            {% else %}
+              <p class="text-muted">LoomPress will continue setup using the existing site records in the database.</p>
+            {% endif %}
+          </section>
+        {% endif %}
+
+        <section class="onboarding-section">
+          <div class="onboarding-section__header">
+            <span class="onboarding-section__step">{{ 'Step 3' if onboardingState.requiresSiteCreation else 'Step 2' }}</span>
+            <h2>Administrator account</h2>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="admin_name">Display name</label>
+              <input id="admin_name" name="admin_name" type="text" required class="form-input" value="{{ values.admin_name or '' }}" placeholder="Admin">
+            </div>
+            <div class="form-group">
+              <label for="admin_email">Email</label>
+              <input id="admin_email" name="admin_email" type="email" required class="form-input" value="{{ values.admin_email or '' }}" placeholder="admin@example.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="admin_password">Password</label>
+              <input id="admin_password" name="admin_password" type="password" required class="form-input" minlength="10" autocomplete="new-password" placeholder="At least 10 characters">
+            </div>
+            <div class="form-group">
+              <label for="admin_password_confirm">Confirm password</label>
+              <input id="admin_password_confirm" name="admin_password_confirm" type="password" required class="form-input" minlength="10" autocomplete="new-password" placeholder="Repeat the password">
+            </div>
+          </div>
+        </section>
+
+        <section class="onboarding-review">
+          <div>
+            <span class="onboarding-section__step">{{ 'Step 4' if onboardingState.requiresSiteCreation else 'Step 3' }}</span>
+            <h2>Finish setup</h2>
+            <p>
+              {% if onboardingState.requiresSiteCreation %}
+                LoomPress will create your first site with the selected theme and defaults, create the superadmin account,
+                attach that admin to the site, and sign you into the dashboard.
+              {% else %}
+                LoomPress will create the first superadmin account, connect it to the existing site records, and sign you in.
+              {% endif %}
+            </p>
+          </div>
+          <button type="submit" class="btn btn--primary onboarding-review__submit">
+            {{ 'Create Site and Enter Admin' if onboardingState.requiresSiteCreation else 'Create Admin and Enter Dashboard' }}
+          </button>
+        </section>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

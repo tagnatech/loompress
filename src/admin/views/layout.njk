@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — LoomPress Admin</title>
+  {{ (brandHeadHtml or defaultBrandHeadHtml) | safe }}
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  {% block head %}{% endblock %}
+</head>
+<body class="admin-body">
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar__header">
+        <a href="/admin/dashboard" class="sidebar__brand">
+          <img
+            src="{{ currentSite.logo_url if currentSite and currentSite.logo_url else defaultSiteLogoUrl }}"
+            alt="{{ currentSite.name if currentSite else 'LoomPress' }}"
+            class="sidebar__logo-mark"
+          >
+          <span class="sidebar__brand-copy">
+            <span class="sidebar__logo">LoomPress</span>
+            {% if currentSite %}
+              <span class="sidebar__site">{{ currentSite.name }}</span>
+            {% endif %}
+          </span>
+        </a>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="/admin/dashboard" class="sidebar__link {% if activeNav == 'dashboard' %}sidebar__link--active{% endif %}">Dashboard</a>
+        <a href="/admin/posts" class="sidebar__link {% if activeNav == 'posts' %}sidebar__link--active{% endif %}">Posts</a>
+        <a href="/admin/pages" class="sidebar__link {% if activeNav == 'pages' %}sidebar__link--active{% endif %}">Pages</a>
+        <a href="/admin/media" class="sidebar__link {% if activeNav == 'media' %}sidebar__link--active{% endif %}">Media</a>
+        <a href="/admin/categories" class="sidebar__link {% if activeNav == 'categories' %}sidebar__link--active{% endif %}">Categories</a>
+        <a href="/admin/tags" class="sidebar__link {% if activeNav == 'tags' %}sidebar__link--active{% endif %}">Tags</a>
+        <a href="/admin/comments" class="sidebar__link {% if activeNav == 'comments' %}sidebar__link--active{% endif %}">Comments</a>
+        <hr class="sidebar__divider">
+        <a href="/admin/menus" class="sidebar__link {% if activeNav == 'menus' %}sidebar__link--active{% endif %}">Menus</a>
+        <a href="/admin/settings/themes" class="sidebar__link {% if activeNav == 'appearance' %}sidebar__link--active{% endif %}">Appearance</a>
+        <a href="/admin/settings" class="sidebar__link {% if activeNav == 'settings' %}sidebar__link--active{% endif %}">Settings</a>
+        <a href="/admin/users" class="sidebar__link {% if activeNav == 'users' %}sidebar__link--active{% endif %}">Users</a>
+        <hr class="sidebar__divider">
+        {% if currentUser and currentUser.role == 'superadmin' %}
+          <a href="/admin/sites" class="sidebar__link {% if activeNav == 'sites' %}sidebar__link--active{% endif %}">Sites</a>
+          <a href="/admin/plugins" class="sidebar__link {% if activeNav == 'plugins' %}sidebar__link--active{% endif %}">Plugins</a>
+        {% endif %}
+        {% if pluginAdminNavItems and (pluginAdminNavItems | length) %}
+          <hr class="sidebar__divider">
+          {% for item in pluginAdminNavItems %}
+            <a href="{{ item.href }}" class="sidebar__link {% if activeNav == item.activeNav %}sidebar__link--active{% endif %}">{{ item.label }}</a>
+          {% endfor %}
+        {% endif %}
+      </nav>
+      <div class="sidebar__footer">
+        {% if currentUser %}
+          <div class="sidebar__user">{{ currentUser.display_name }}</div>
+        {% endif %}
+        <form method="POST" action="/admin/logout" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="sidebar__link sidebar__link--logout">Logout</button>
+        </form>
+      </div>
+    </aside>
+    <main class="main-content">
+      {% if flashMessages.success %}
+        {% for msg in flashMessages.success %}
+          <div class="alert alert--success">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if flashMessages.error %}
+        {% for msg in flashMessages.error %}
+          <div class="alert alert--error">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if flashMessages.info %}
+        {% for msg in flashMessages.info %}
+          <div class="alert alert--info">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

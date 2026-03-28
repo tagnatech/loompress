@@ -1,0 +1,57 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'pages' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ "Edit Page" if page else "New Page" }}</h1>
+</div>
+
+<form method="POST" action="{{ '/admin/pages/' + page.id + '/edit' if page else '/admin/pages/new' }}">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  <div class="form-layout">
+    <div class="form-layout__main">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" name="title" id="title" class="form-control" value="{{ page.title if page else '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="slug">Slug</label>
+        <input type="text" name="slug" id="slug" class="form-control" value="{{ page.slug if page else '' }}" placeholder="auto-generated from title">
+      </div>
+
+      <div class="form-group">
+        <label for="body">Content</label>
+        <textarea name="body" id="body" class="form-control form-control--editor" rows="20">{{ page.body if page else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-layout__sidebar">
+      <div class="sidebar-card">
+        <h3>Publish</h3>
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select name="status" id="status" class="form-control">
+            <option value="draft" {{ 'selected' if not page or page.status == 'draft' }}>Draft</option>
+            <option value="published" {{ 'selected' if page and page.status == 'published' }}>Published</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">{{ "Update Page" if page else "Create Page" }}</button>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>SEO</h3>
+        <div class="form-group">
+          <label for="meta_title">Meta Title</label>
+          <input type="text" name="meta_title" id="meta_title" class="form-control" value="{{ page.meta_title if page else '' }}">
+        </div>
+        <div class="form-group">
+          <label for="meta_description">Meta Description</label>
+          <textarea name="meta_description" id="meta_description" class="form-control" rows="3">{{ page.meta_description if page else '' }}</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

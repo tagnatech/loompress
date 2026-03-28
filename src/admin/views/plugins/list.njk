@@ -1,0 +1,40 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'plugins' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Plugins</h1>
+</div>
+
+<p class="text-muted" style="margin-bottom: 1.5rem;">
+  Installed runtime extensions loaded from the configured plugin directories.
+</p>
+
+{% if plugins.length %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Version</th>
+        <th>Description</th>
+        <th>Entry</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for plugin in plugins %}
+        <tr>
+          <td>
+            <strong>{{ plugin.name }}</strong>
+            <div class="text-muted" style="font-size: 0.75rem;">{{ plugin.slug }}</div>
+          </td>
+          <td>{{ plugin.version or '—' }}</td>
+          <td>{{ plugin.description or 'No description provided.' }}</td>
+          <td><code>{{ plugin.entryPath }}</code></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty-state">No plugins are currently loaded.</div>
+{% endif %}
+{% endblock %}

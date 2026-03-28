@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  {% if description %}
+  <meta name="description" content="{{ description }}">
+  {% endif %}
+  {{ (brandHeadHtml or defaultBrandHeadHtml) | safe }}
+  <link rel="canonical" href="{{ site.base_url }}{{ canonicalPath or '/' }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.name }} RSS Feed" href="{{ site.base_url }}/feed.xml">
+  <link rel="sitemap" type="application/xml" href="{{ site.base_url }}/sitemap.xml">
+
+  {# Open Graph #}
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description or site.tagline or '' }}">
+  <meta property="og:url" content="{{ site.base_url }}{{ canonicalPath or '/' }}">
+  <meta property="og:type" content="{{ ogType or 'website' }}">
+  {% if ogImage %}
+  <meta property="og:image" content="{{ ogImage }}">
+  {% endif %}
+
+  {# Twitter Card #}
+  <meta name="twitter:card" content="{{ twitterCard or 'summary_large_image' }}">
+  <meta name="twitter:title" content="{{ title }}">
+  <meta name="twitter:description" content="{{ description or site.tagline or '' }}">
+
+  {% if page > 1 %}
+  <link rel="prev" href="{{ site.base_url }}/page/{{ page - 1 }}">
+  {% endif %}
+  {% if page < totalPages %}
+  <link rel="next" href="{{ site.base_url }}/page/{{ page + 1 }}">
+  {% endif %}
+  {% if seoHeadHtml %}
+  {{ seoHeadHtml | safe }}
+  {% endif %}
+
+  <style>
+    :root {
+      --color-bg: #fafafa;
+      --color-surface: #ffffff;
+      --color-text: #1a1a2e;
+      --color-text-muted: #64748b;
+      --color-accent: #6366f1;
+      --color-accent-hover: #4f46e5;
+      --color-border: #e2e8f0;
+      --font-serif: Georgia, 'Times New Roman', serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --max-width: 720px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); color: var(--color-text); background: var(--color-bg); line-height: 1.7; }
+    a { color: var(--color-accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: var(--max-width); margin: 0 auto; padding: 0 1.5rem; }
+
+    .site-header { padding: 2rem 0; border-bottom: 1px solid var(--color-border); margin-bottom: 2rem; }
+    .site-header__name { font-size: 1.75rem; font-weight: 700; }
+    .site-header__name a { color: var(--color-text); }
+    .site-header__tagline { color: var(--color-text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .site-header__logo { height: 40px; margin-bottom: 0.5rem; }
+
+    .site-footer { margin-top: 3rem; padding: 2rem 0; border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 0.8rem; text-align: center; }
+
+    .post-card { margin-bottom: 2.5rem; padding-bottom: 2.5rem; border-bottom: 1px solid var(--color-border); }
+    .post-card:last-child { border-bottom: none; }
+    .post-card__image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; }
+    .post-card__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .post-card__title a { color: var(--color-text); }
+    .post-card__meta { font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 0.75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .post-card__excerpt { color: var(--color-text); font-size: 0.95rem; }
+
+    .post-single { margin-bottom: 3rem; }
+    .post-single__title { font-size: 2.25rem; font-weight: 700; margin-bottom: 0.75rem; line-height: 1.2; }
+    .post-single__meta { font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .post-single__featured { width: 100%; border-radius: 8px; margin-bottom: 2rem; }
+    .post-single__body { font-family: var(--font-serif); font-size: 1.1rem; line-height: 1.8; }
+    .post-single__body h1, .post-single__body h2, .post-single__body h3 { font-family: var(--font-sans); margin: 1.5em 0 0.5em; }
+    .post-single__body p { margin-bottom: 1.25em; }
+    .post-single__body img { max-width: 100%; border-radius: 4px; }
+    .post-single__body blockquote { border-left: 3px solid var(--color-accent); padding-left: 1rem; margin: 1.5em 0; font-style: italic; color: var(--color-text-muted); }
+    .post-single__body pre { background: #1e1e2e; color: #cdd6f4; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 1.5em 0; font-size: 0.9rem; }
+    .post-single__body code { font-size: 0.9em; background: #f1f5f9; padding: 0.15rem 0.35rem; border-radius: 3px; }
+    .post-single__body pre code { background: none; padding: 0; }
+    .post-single__body ul, .post-single__body ol { margin: 1em 0; padding-left: 1.5em; }
+
+    .post-tags { margin: 2rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .post-tags__tag { background: #f1f5f9; color: var(--color-text-muted); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; }
+    .post-tags__tag:hover { background: var(--color-accent); color: #fff; text-decoration: none; }
+
+    .post-nav { display: flex; justify-content: space-between; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border); }
+    .post-nav a { font-size: 0.9rem; }
+
+    .archive-header { margin-bottom: 2rem; }
+    .archive-header h1 { font-size: 1.75rem; }
+    .archive-header p { color: var(--color-text-muted); margin-top: 0.25rem; }
+
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 2rem 0; }
+    .pagination a { color: var(--color-accent); }
+    .pagination span { color: var(--color-text-muted); font-size: 0.85rem; }
+  </style>
+  {% if site.custom_css %}
+  <style>{{ site.custom_css | safe }}</style>
+  {% endif %}
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    <header class="site-header">
+      {% if site.logo_url %}
+        <img src="{{ site.logo_url }}" alt="{{ site.name }}" class="site-header__logo">
+      {% endif %}
+      <h1 class="site-header__name"><a href="/">{{ site.name }}</a></h1>
+      {% if site.tagline %}
+        <p class="site-header__tagline">{{ site.tagline }}</p>
+      {% endif %}
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; {{ site.name }}. Powered by <a href="https://github.com/tagnatech/loompress">LoomPress</a>.</p>
+    </footer>
+  </div>
+</body>
+</html>

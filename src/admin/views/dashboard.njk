@@ -1,0 +1,53 @@
+{% extends "layout.njk" %}
+{% set activeNav = 'dashboard' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Dashboard</h1>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__value">{{ stats.total }}</div>
+    <div class="stat-card__label">Total Posts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__value">{{ stats.published }}</div>
+    <div class="stat-card__label">Published</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__value">{{ stats.drafts }}</div>
+    <div class="stat-card__label">Drafts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__value">{{ stats.scheduled }}</div>
+    <div class="stat-card__label">Scheduled</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Recent Posts</h2>
+  {% if recentPosts.length %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for post in recentPosts %}
+        <tr>
+          <td><a href="/admin/posts/{{ post.id }}/edit">{{ post.title }}</a></td>
+          <td><span class="badge badge--{{ post.status }}">{{ post.status }}</span></td>
+          <td>{{ post.updated_at | formatDate('DD MMM YYYY') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No posts yet. <a href="/admin/posts/new">Create your first post</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

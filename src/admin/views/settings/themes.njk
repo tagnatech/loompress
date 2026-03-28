@@ -1,0 +1,43 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'appearance' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Themes</h1>
+</div>
+
+<div class="settings-nav">
+  <a href="/admin/settings" class="settings-nav__link">General</a>
+  <a href="/admin/settings/comments" class="settings-nav__link">Comments</a>
+  <a href="/admin/settings/seo" class="settings-nav__link">SEO</a>
+  <a href="/admin/settings/themes" class="settings-nav__link settings-nav__link--active">Themes</a>
+</div>
+
+<p class="text-muted" style="margin-bottom: 1.5rem;">Current theme: <strong>{{ currentTheme }}</strong></p>
+
+<div class="theme-grid">
+  {% for theme in themes %}
+  <div class="theme-card {% if theme.active %}theme-card--active{% endif %}">
+    <div class="theme-card__preview">
+      <div class="theme-card__preview-label">{{ theme.displayName }}</div>
+    </div>
+    <div class="theme-card__info">
+      <h3 class="theme-card__name">{{ theme.displayName }}</h3>
+      <p class="theme-card__desc">{{ theme.description }}</p>
+      <div class="theme-card__actions">
+        {% if theme.active %}
+          <span class="badge badge--published">Active</span>
+        {% else %}
+          <form method="POST" action="/admin/settings/themes/activate">
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+            <input type="hidden" name="theme" value="{{ theme.name }}">
+            <button type="submit" class="btn btn--sm btn--primary">Activate</button>
+          </form>
+        {% endif %}
+        <a href="/?theme_preview={{ theme.name }}" target="_blank" class="btn btn--sm">Preview</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

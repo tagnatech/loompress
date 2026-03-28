@@ -1,0 +1,96 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'sites' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ "Edit Site" if site else "New Site" }}</h1>
+  <a href="/admin/sites" class="btn">Back</a>
+</div>
+
+<form method="POST" action="{{ '/admin/sites/' + site.id + '/edit' if site else '/admin/sites/new' }}" class="form-narrow" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  <input type="hidden" name="site_upload_slug" value="{{ site.slug if site else '' }}">
+
+  <div class="form-group">
+    <label for="hostname">Hostname</label>
+    <input type="text" id="hostname" name="hostname" value="{{ site.hostname if site else '' }}" required class="form-input" placeholder="blog.example.com">
+  </div>
+
+  <div class="form-group">
+    <label for="name">Site Name</label>
+    <input type="text" id="name" name="name" value="{{ site.name if site else '' }}" required class="form-input">
+  </div>
+
+  {% if not site %}
+  <div class="form-group">
+    <label for="slug">Slug</label>
+    <input type="text" id="slug" name="slug" value="" required class="form-input" placeholder="lowercase-no-spaces">
+  </div>
+  {% endif %}
+
+  <div class="form-group">
+    <label for="tagline">Tagline</label>
+    <input type="text" id="tagline" name="tagline" value="{{ site.tagline if site else '' }}" class="form-input">
+  </div>
+
+  <div class="form-group">
+    <label for="base_url">Base URL</label>
+    <input type="url" id="base_url" name="base_url" value="{{ site.base_url if site else '' }}" required class="form-input" placeholder="https://blog.example.com">
+  </div>
+
+  <div class="form-group">
+    <label for="logo_url">Logo URL</label>
+    <input type="text" id="logo_url" name="logo_url" value="{{ site.logo_url if site else '' }}" class="form-input" placeholder="https://example.com/logo.svg or /assets/images/logo.svg">
+    <small class="form-help">Optional. You can use a remote URL, a file in <code>/assets/...</code>, or an uploaded image below. If left blank, LoomPress uses the built-in phoenix logo.</small>
+  </div>
+
+  <div class="form-group">
+    <label for="logo_file">Upload Logo</label>
+    <input type="file" id="logo_file" name="logo_file" accept="image/png,image/jpeg,image/webp,image/gif" class="form-input">
+    <small class="form-help">Accepted formats: JPG, PNG, WebP, GIF.</small>
+    {% if site and site.logo_url %}
+      <small class="form-help">Current logo: <a href="{{ site.logo_url }}" target="_blank" rel="noopener noreferrer">{{ site.logo_url }}</a></small>
+    {% endif %}
+  </div>
+
+  <div class="form-group">
+    <label for="timezone">Timezone</label>
+    <select id="timezone" name="timezone" class="form-input">
+      {% for timezoneOption in timezones %}
+      <option value="{{ timezoneOption.value }}" {{ 'selected' if ((site.timezone if site else 'UTC') == timezoneOption.value) }}>
+        {{ timezoneOption.label }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="permalink_pattern">Permalink Pattern</label>
+    <select id="permalink_pattern" name="permalink_pattern" class="form-input">
+      <option value="slug" {{ 'selected' if not site or site.permalink_pattern == 'slug' }}>/:slug</option>
+      <option value="dated" {{ 'selected' if site and site.permalink_pattern == 'dated' }}>/:year/:month/:day/:slug</option>
+      <option value="category-slug" {{ 'selected' if site and site.permalink_pattern == 'category-slug' }}>/:category/:slug</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="theme">Theme</label>
+    <select id="theme" name="theme" class="form-input">
+      {% for themeOption in themes %}
+      <option value="{{ themeOption.name }}" {{ 'selected' if (site and site.theme == themeOption.name) or (not site and themeOption.name == 'default') }}>
+        {{ themeOption.displayName }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if site %}
+  <div class="form-group">
+    <label for="custom_css">Custom CSS</label>
+    <textarea id="custom_css" name="custom_css" rows="8" class="form-input form-input--mono">{{ site.custom_css if site else '' }}</textarea>
+  </div>
+  {% endif %}
+
+  <button type="submit" class="btn btn--primary">{{ "Update" if site else "Create" }} Site</button>
+</form>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "layout.njk" %}
+{% set canonicalPath = '/category/' + category.slug %}
+
+{% block content %}
+<div class="archive-header">
+  <h1>{{ category.name }}</h1>
+  {% if category.description %}
+    <p>{{ category.description }}</p>
+  {% endif %}
+</div>
+
+{% for post in posts %}
+<div class="post-list-item">
+  <a href="/{{ post.slug }}">
+    <span class="post-list-item__title">{{ post.title }}</span>
+    <span class="post-list-item__date">{{ post.published_at | formatDate('DD MMM YYYY') }}</span>
+  </a>
+</div>
+{% else %}
+  <p style="color: var(--color-muted); padding: 3rem 0;">No posts in this category.</p>
+{% endfor %}
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="/category/{{ category.slug }}{% if page > 2 %}/page/{{ page - 1 }}{% endif %}">&larr; Newer</a>
+  {% endif %}
+  <span>{{ page }} / {{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/category/{{ category.slug }}/page/{{ page + 1 }}">Older &rarr;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

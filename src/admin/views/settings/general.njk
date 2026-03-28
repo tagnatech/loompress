@@ -1,0 +1,63 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'settings' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Settings</h1>
+</div>
+
+<div class="settings-nav">
+  <a href="/admin/settings" class="settings-nav__link settings-nav__link--active">General</a>
+  <a href="/admin/settings/comments" class="settings-nav__link">Comments</a>
+  <a href="/admin/settings/seo" class="settings-nav__link">SEO</a>
+  <a href="/admin/settings/themes" class="settings-nav__link">Themes</a>
+</div>
+
+<form method="POST" action="/admin/settings">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  <div class="settings-section">
+    <h2>Reading</h2>
+
+    <div class="form-group">
+      <label for="posts_per_page">Posts per page</label>
+      <input type="number" name="posts_per_page" id="posts_per_page" class="form-control form-control--sm" value="{{ settings['site.posts_per_page'] }}" min="1" max="100">
+    </div>
+
+    <div class="form-group">
+      <label for="excerpt_length">Excerpt length (characters)</label>
+      <input type="number" name="excerpt_length" id="excerpt_length" class="form-control form-control--sm" value="{{ settings['reading.excerpt_length'] }}" min="50" max="500">
+    </div>
+
+    <div class="form-group form-group--checkbox">
+      <label>
+        <input type="checkbox" name="show_full_content" {{ 'checked' if settings['reading.show_full_content'] == 'true' }}>
+        Show full content on blog index (instead of excerpt)
+      </label>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h2>Display</h2>
+
+    <div class="form-group">
+      <label for="date_format">Date format</label>
+      <select name="date_format" id="date_format" class="form-control form-control--sm">
+        <option value="DD MMM YYYY" {{ 'selected' if settings['site.date_format'] == 'DD MMM YYYY' }}>25 Mar 2026</option>
+        <option value="MMM DD, YYYY" {{ 'selected' if settings['site.date_format'] == 'MMM DD, YYYY' }}>Mar 25, 2026</option>
+        <option value="YYYY-MM-DD" {{ 'selected' if settings['site.date_format'] == 'YYYY-MM-DD' }}>2026-03-25</option>
+        <option value="DD/MM/YYYY" {{ 'selected' if settings['site.date_format'] == 'DD/MM/YYYY' }}>25/03/2026</option>
+      </select>
+    </div>
+
+    <div class="form-group form-group--checkbox">
+      <label>
+        <input type="checkbox" name="show_author" {{ 'checked' if settings['site.show_author'] == 'true' }}>
+        Show author name on posts
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn--primary">Save Settings</button>
+</form>
+{% endblock %}

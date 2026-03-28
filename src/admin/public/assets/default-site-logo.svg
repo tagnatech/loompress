@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">LoomPress default phoenix logo</title>
+  <desc id="desc">A stylized red phoenix used when no custom site logo is configured.</desc>
+  <defs>
+    <linearGradient id="phoenix-body" x1="160" y1="74" x2="294" y2="458" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8ea1"/>
+      <stop offset="0.42" stop-color="#ff3f4e"/>
+      <stop offset="1" stop-color="#b40018"/>
+    </linearGradient>
+    <linearGradient id="phoenix-wing" x1="218" y1="84" x2="442" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb4b7"/>
+      <stop offset="0.28" stop-color="#ff5a57"/>
+      <stop offset="1" stop-color="#c00016"/>
+    </linearGradient>
+    <linearGradient id="phoenix-tail" x1="128" y1="286" x2="282" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff5d65"/>
+      <stop offset="1" stop-color="#d10017"/>
+    </linearGradient>
+    <radialGradient id="phoenix-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(250 250) rotate(90) scale(210)">
+      <stop offset="0" stop-color="#ff6f72" stop-opacity="0.44"/>
+      <stop offset="0.68" stop-color="#ff3c42" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ff3c42" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="256" r="198" fill="url(#phoenix-glow)"/>
+  <g filter="url(#soft-glow)" opacity="0.45">
+    <path d="M212 426C250 366 266 308 262 244C258 184 236 138 198 108C216 102 236 108 250 124C246 94 254 68 276 46C284 78 302 104 330 124C366 151 388 190 390 240C392 302 366 354 322 398C286 434 250 456 212 462Z" fill="#ff3f4e"/>
+    <path d="M244 316C304 254 370 208 450 152C438 220 404 266 352 296C390 302 422 320 448 350C386 350 334 362 292 390C256 414 228 446 208 472C188 444 188 406 204 374C212 356 226 336 244 316Z" fill="#ff2536"/>
+    <path d="M232 292C236 236 256 186 294 142C332 100 376 74 420 64C404 124 374 166 330 192C366 194 398 208 422 234C384 240 344 258 314 284C290 304 270 330 254 364C238 346 230 320 232 292Z" fill="#ff6171"/>
+  </g>
+
+  <g>
+    <path d="M206 420C244 360 260 304 256 242C252 184 232 140 196 110C214 102 232 108 246 124C242 92 252 66 274 44C282 78 300 104 326 122C360 148 380 186 382 236C384 296 360 348 318 392C282 430 246 452 206 458Z" fill="url(#phoenix-body)"/>
+    <path d="M236 310C296 248 362 204 442 148C430 214 396 260 344 292C384 298 416 316 442 344C380 346 330 358 288 386C252 410 224 442 204 468C184 440 184 402 198 372C206 352 220 332 236 310Z" fill="url(#phoenix-wing)"/>
+    <path d="M226 286C230 232 250 182 286 140C324 98 366 72 410 62C396 120 366 162 324 188C358 190 390 204 414 230C376 236 338 252 308 278C286 298 266 324 250 356C234 340 226 316 226 286Z" fill="#ff7483"/>
+    <path d="M164 204C146 180 120 162 88 150C122 140 150 144 174 160C174 132 184 108 202 88C210 118 208 146 194 170C186 184 176 196 164 204Z" fill="#ff9cad"/>
+    <path d="M232 126C222 102 214 76 212 48C240 72 260 96 268 124C260 140 252 158 246 178C238 160 234 144 232 126Z" fill="#ff9dad"/>
+    <path d="M214 384C202 414 180 442 148 466C116 488 84 500 54 502C96 482 128 454 148 420C166 390 178 360 182 332Z" fill="url(#phoenix-tail)"/>
+    <path d="M220 384C246 420 276 446 310 462C342 476 378 482 418 480C382 492 346 494 308 486C266 476 234 454 212 420Z" fill="#cc0017"/>
+    <path d="M160 156C178 156 192 164 204 178C186 178 172 186 160 204C156 188 156 172 160 156Z" fill="#820012"/>
+  </g>
+</svg>

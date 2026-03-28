@@ -1,0 +1,299 @@
+{% extends "layout.njk" %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ assetBase }}/ai-autoblog.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>AI Autoblog</h1>
+    <p class="text-muted" style="margin-top:0.35rem;">Scheduled OpenRouter agents for SEO-ready posts and featured images.</p>
+  </div>
+  <form method="POST" action="/admin/plugins/ai-autoblog/run">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button type="submit" class="btn btn--primary">Run Now</button>
+  </form>
+</div>
+
+<div class="autoblog-grid">
+  <form method="POST" action="/admin/plugins/ai-autoblog" class="autoblog-stack">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Runtime</p>
+          <h2>OpenRouter</h2>
+        </div>
+        <span class="badge {{ 'badge--published' if runtime.ready else 'badge--draft' }}">
+          {{ 'Ready' if runtime.ready else 'Needs Setup' }}
+        </span>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <label>
+          <input type="checkbox" name="enabled" {{ 'checked' if autoblog.enabled }}>
+          Enable scheduled autoblogging for this site
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="openrouter_api_key">OpenRouter API key</label>
+          <input type="password" id="openrouter_api_key" name="openrouter_api_key" class="form-control" autocomplete="off" placeholder="Leave blank to keep the current key">
+          <small class="form-help">
+            {% if storedApiKeyMask %}
+              Stored key: <code>{{ storedApiKeyMask }}</code>. Leave blank to keep it, or tick clear below.
+            {% else %}
+              If this stays blank, LoomPress falls back to the <code>OPENROUTER_API_KEY</code> environment variable.
+            {% endif %}
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="text_model">Text model</label>
+          <input type="text" id="text_model" name="text_model" class="form-control form-control--mono" value="{{ autoblog.textModel }}" placeholder="Enter a model that supports structured outputs">
+          <small class="form-help">Used by the strategy, writer, and editor agents.</small>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="image_model">Image model</label>
+          <input type="text" id="image_model" name="image_model" class="form-control form-control--mono" value="{{ autoblog.imageModel }}" placeholder="Enter an image-capable model">
+          <small class="form-help">Required only if featured image generation is enabled.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="author_user_id">Post author</label>
+          <select id="author_user_id" name="author_user_id" class="form-control">
+            <option value="">Auto-pick a site admin</option>
+            {% for user in siteUsers %}
+              <option value="{{ user.id }}" {{ 'selected' if autoblog.authorUserId == user.id }}>
+                {{ user.display_name }} ({{ user.site_role }})
+              </option>
+            {% endfor %}
+          </select>
+          <small class="form-help">Optional. Scheduled runs will use this user when available.</small>
+        </div>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <label>
+          <input type="checkbox" name="clear_openrouter_api_key">
+          Clear the stored database key and rely on environment configuration only
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Schedule</p>
+          <h2>Publishing cadence</h2>
+        </div>
+        <span class="autoblog-card__meta">{{ runtime.scheduleSummary }}</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="schedule_mode">Cadence</label>
+          <select id="schedule_mode" name="schedule_mode" class="form-control">
+            {% for option in scheduleModeOptions %}
+              <option value="{{ option.value }}" {{ 'selected' if autoblog.scheduleMode == option.value }}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="schedule_time">Time</label>
+          <input type="time" id="schedule_time" name="schedule_time" class="form-control form-control--sm" value="{{ autoblog.scheduleTime }}">
+          <small class="form-help">Runs in the site timezone: <code>{{ currentSite.timezone }}</code></small>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="schedule_day">Weekly day</label>
+          <select id="schedule_day" name="schedule_day" class="form-control">
+            {% for option in weekdayOptions %}
+              <option value="{{ option.value }}" {{ 'selected' if autoblog.scheduleWeekday == option.value }}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+          <small class="form-help">Used only when cadence is weekly.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="start_date">Earliest run date</label>
+          <input type="date" id="start_date" name="start_date" class="form-control form-control--sm" value="{{ autoblog.startDate or '' }}">
+          <small class="form-help">Optional. Leave empty to allow the next valid slot.</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="post_status">When a post is created</label>
+        <select id="post_status" name="post_status" class="form-control">
+          {% for option in postStatusOptions %}
+            <option value="{{ option.value }}" {{ 'selected' if autoblog.postStatus == option.value }}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Content</p>
+          <h2>Briefing and SEO</h2>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="content_brief">Content brief</label>
+        <textarea id="content_brief" name="content_brief" class="form-control" rows="6">{{ autoblog.contentBrief }}</textarea>
+        <small class="form-help">Describe the site niche, recurring topics, products, expertise boundaries, and what the AI should avoid inventing.</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="audience">Audience</label>
+          <input type="text" id="audience" name="audience" class="form-control" value="{{ autoblog.audience }}" placeholder="Who the content is for">
+        </div>
+
+        <div class="form-group">
+          <label for="keyword_focus">Keyword focus</label>
+          <input type="text" id="keyword_focus" name="keyword_focus" class="form-control" value="{{ autoblog.keywordFocus }}" placeholder="Comma-separated SEO terms">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="brand_voice">Brand voice</label>
+        <textarea id="brand_voice" name="brand_voice" class="form-control" rows="4">{{ autoblog.brandVoice }}</textarea>
+        <small class="form-help">Tone, reading level, preferred formatting, and any authoring rules you want the agents to follow.</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="default_category">Default category</label>
+          <input type="text" id="default_category" name="default_category" class="form-control" value="{{ autoblog.defaultCategory }}" placeholder="Optional fallback category">
+        </div>
+
+        <div class="form-group">
+          <label for="default_tags">Always include tags</label>
+          <input type="text" id="default_tags" name="default_tags" class="form-control" value="{{ autoblog.defaultTags }}" placeholder="Comma-separated tags">
+        </div>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <label>
+          <input type="checkbox" name="research_with_web" {{ 'checked' if autoblog.researchWithWeb }}>
+          Enable OpenRouter web research in the planning step
+        </label>
+      </div>
+    </section>
+
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Images</p>
+          <h2>Featured image generation</h2>
+        </div>
+      </div>
+
+      <div class="form-group form-group--checkbox">
+        <label>
+          <input type="checkbox" name="image_enabled" {{ 'checked' if autoblog.imageEnabled }}>
+          Generate a featured image for every AI post
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="image_aspect_ratio">Aspect ratio</label>
+          <select id="image_aspect_ratio" name="image_aspect_ratio" class="form-control">
+            {% for ratio in aspectRatioOptions %}
+              <option value="{{ ratio }}" {{ 'selected' if autoblog.imageAspectRatio == ratio }}>{{ ratio }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="image_style">Style guidance</label>
+          <textarea id="image_style" name="image_style" class="form-control" rows="3">{{ autoblog.imageStyle }}</textarea>
+          <small class="form-help">Optional visual direction appended to the generated image prompt.</small>
+        </div>
+      </div>
+    </section>
+
+    <button type="submit" class="btn btn--primary">Save AI Autoblog Settings</button>
+  </form>
+
+  <aside class="autoblog-stack">
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Status</p>
+          <h2>Current runtime</h2>
+        </div>
+      </div>
+
+      <dl class="autoblog-facts">
+        <div>
+          <dt>API key source</dt>
+          <dd>{{ runtime.apiKeySource }}</dd>
+        </div>
+        <div>
+          <dt>Next scheduled run</dt>
+          <dd>{{ runtime.nextRunLabel }}</dd>
+        </div>
+        <div>
+          <dt>Last run</dt>
+          <dd>{{ runtime.lastRunLabel }}</dd>
+        </div>
+      </dl>
+
+      {% if runtime.missingFields.length %}
+        <div class="alert alert--info" style="margin-top: 1rem;">
+          Missing: {{ runtime.missingFields | join(', ') }}
+        </div>
+      {% endif %}
+
+      {% if autoblog.lastError %}
+        <div class="alert alert--error" style="margin-top: 1rem;">{{ autoblog.lastError }}</div>
+      {% endif %}
+
+      {% if autoblog.lastWarning %}
+        <div class="alert alert--info" style="margin-top: 1rem;">{{ autoblog.lastWarning }}</div>
+      {% endif %}
+
+      {% if autoblog.lastPostId %}
+        <div class="autoblog-last-post">
+          <p class="autoblog-last-post__label">Latest generated post</p>
+          <a href="/admin/posts/{{ autoblog.lastPostId }}/edit" class="autoblog-last-post__link">{{ autoblog.lastPostTitle or autoblog.lastPostSlug }}</a>
+          <small class="form-help">Slug: <code>{{ autoblog.lastPostSlug }}</code></small>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="form-card autoblog-card">
+      <div class="autoblog-card__header">
+        <div>
+          <p class="autoblog-card__eyebrow">Pipeline</p>
+          <h2>Agent workflow</h2>
+        </div>
+      </div>
+
+      <ol class="autoblog-flow">
+        <li><strong>Strategy agent</strong> chooses a search-intent-aligned topic, category, tags, and image direction.</li>
+        <li><strong>Writer agent</strong> expands the brief into HTML with headings, excerpt, metadata, and internal-link opportunities.</li>
+        <li><strong>Editor agent</strong> tightens SEO metadata and final structure before LoomPress saves the post.</li>
+      </ol>
+
+      <p class="text-muted" style="margin-top:1rem;">
+        This plugin stores metadata directly on normal LoomPress posts, so it works with the bundled SEO Foundation extension and the existing post editor.
+      </p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -6,7 +6,6 @@
 
 - Node.js 22+
 - PostgreSQL (or a Supabase project)
-- The `@tagna/udiot` repo checked out at `../../udiot` relative to loompress (i.e., `/w/Projects/udiot`)
 
 ---
 
@@ -20,21 +19,36 @@ cd loompress
 # Install dependencies
 npm install
 
-# Copy and configure environment
+# Optional: copy and configure environment ahead of time
 cp .env.example .env
-# Edit .env — at minimum set DATABASE_URL and SESSION_SECRET
-
-# Run database migrations
-npm run migrate
-
-# Seed the first superadmin user
-npm run seed:admin -- --email admin@example.com --password changeme
+# Edit .env — at minimum set DATABASE_URL and a 32+ character SESSION_SECRET
 
 # Start dev server (with hot reload via tsx watch)
 npm run dev
 ```
 
-Admin panel: `http://localhost:4100/admin/login`
+If `.env` is missing or incomplete, open `http://localhost:4100/install/database` and use the installer. It will:
+
+- save `DATABASE_URL` and `SESSION_SECRET` into `.env`
+- verify the database connection
+- run migrations
+- continue to the site/admin onboarding flow
+
+If you prefer the manual path, you can still run:
+
+```bash
+npm run migrate
+npm run seed:admin -- --email admin@example.com --password "change-me-now-123"
+```
+
+Admin panel after setup: `http://localhost:4100/admin/login`
+
+User-managed static files live under `./assets` by default and are served at `/assets/...`. LoomPress creates these subdirectories automatically:
+
+- `assets/default`
+- `assets/images`
+- `assets/js`
+- `assets/ts`
 
 ---
 
@@ -46,11 +60,12 @@ Admin panel: `http://localhost:4100/admin/login`
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled `dist/server.js` (production) |
 | `npm run migrate` | Apply pending SQL migrations |
-| `npm run migrate:reset` | Drop and recreate all `cms_*` tables (dev only) |
+| `npm run migrate:reset` | Drop and recreate all `lp_*` tables (dev only) |
 | `npm run seed:admin` | Create a superadmin user (accepts `--email`, `--password`, `--name`) |
 | `npm run seed:site` | Create a site row (accepts `--hostname`, `--name`, `--slug`, `--base-url`) |
-| `npm run lint` | Run ESLint |
+| `npm run lint` | Run the repository typecheck (`tsc --noEmit`) |
 | `npm test` | Run tests (Vitest) |
+| `npm run check` | Run typecheck, tests, and production build |
 
 ---
 
@@ -66,12 +81,12 @@ loompress/
 │   │
 │   ├── db/
 │   │   ├── client.ts           ← Exports a singleton pg.Pool (one connection pool per process)
-│   │   ├── migrate.ts          ← Reads migrations/ in order, tracks applied files in _cms_migrations
+│   │   ├── migrate.ts          ← Reads migrations/ in order, tracks applied files in _lp_migrations
 │   │   └── migrations/
 │   │       └── 001_initial_schema.sql
 │   │
 │   ├── multi-site/
-│   │   ├── resolver.ts         ← findByHostname(hostname): queries cms_sites, caches 60s
+│   │   ├── resolver.ts         ← findByHostname(hostname): queries lp_sites, caches 60s
 │   │   ├── middleware.ts       ← siteMiddleware: attaches req.site from req.hostname
 │   │   └── types.ts            ← Express Request augmentation: req.site: SiteContext | null
 │   │
@@ -102,7 +117,7 @@ loompress/
 │   │   └── views/              ← Nunjucks templates (.njk)
 │   │       └── ...
 │   │
-│   ├── public-blog/
+│   ├── public/
 │   │   ├── router.ts           ← createBlogRouter(): mounts public routes
 │   │   ├── controllers/
 │   │   │   ├── blog.controller.ts
@@ -110,6 +125,11 @@ loompress/
 │   │   │   └── sitemap.controller.ts
 │   │   └── views/
 │   │       └── ...
+│   │
+│   ├── plugins/
+│   │   ├── loader.ts           ← Runtime plugin discovery + dynamic import
+│   │   ├── runtime.ts          ← Admin nav visibility helpers
+│   │   └── types.ts            ← Public plugin API types
 │   │
 │   ├── uploads/
 │   │   ├── middleware.ts       ← Wires createUploadMiddleware() from @tagna/udiot/server
@@ -120,6 +140,8 @@ loompress/
 │       └── seed-site.ts
 │
 ├── docs/                      ← This documentation
+├── assets/                    ← User-managed static files served at /assets/*
+├── examples/                  ← Sample plugins and integrations
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
@@ -145,7 +167,7 @@ export class PostService {
     const limit = 20;
     const offset = (page - 1) * limit;
     const { rows } = await this.pool.query<Post>(
-      `SELECT * FROM cms_posts
+      `SELECT * FROM lp_posts
        WHERE site_id = $1 AND status = 'published'
        ORDER BY published_at DESC
        LIMIT $2 OFFSET $3`,
@@ -169,7 +191,7 @@ export const list: express.RequestHandler = async (req, res) => {
 ```
 
 ### Templates
-Nunjucks templates are in `src/admin/views/` and `src/public-blog/views/`. All admin templates extend `layout.njk`. All public blog templates extend their own `layout.njk`.
+Nunjucks templates are in `src/admin/views/` and `src/public/themes/`. All admin templates extend `layout.njk`. Public templates are organized per theme under their own `layout.njk`.
 
 Template variables are passed via `res.render('template', { ...variables })`. No global template variables other than `flash` (set by `flashMiddleware`) and `csrfToken` (set by `csrfMiddleware`).
 
@@ -185,13 +207,25 @@ app.use('/admin', adminRouter);
 app.use('/', blogRouter);
 ```
 
+### Plugins
+
+LoomPress can load runtime plugins from `PLUGINS_DIR` or an explicit `PLUGINS` list. Plugins are plain JavaScript modules that can:
+
+- run startup hooks
+- register admin/public routes
+- add admin sidebar links
+- provide extra admin Nunjucks view directories
+- serve static assets
+
+See [Plugins](plugins.md) for the full contract and the sample plugin under `examples/plugins/hello-world/`.
+
 ---
 
 ## Adding a New Admin Feature
 
 Example: adding a "Pages" section (for static pages like About, Contact).
 
-1. **Service method**: Add `getPages(siteId)`, `createPage(siteId, data)` etc. to `PostService` (pages use the same `cms_posts` table with `type = 'page'`).
+1. **Service method**: Add `getPages(siteId)`, `createPage(siteId, data)` etc. to `PostService` (pages use the same `lp_posts` table with `type = 'page'`).
 
 2. **Controller**: Create `src/admin/controllers/pages.controller.ts` with `list`, `edit`, `create`, `delete` handlers.
 
@@ -211,26 +245,7 @@ Example: adding a "Pages" section (for static pages like About, Contact).
 
 ## Working with @tagna/udiot Locally
 
-LoomPress references udiot as a local file dependency:
-
-```json
-{
-  "dependencies": {
-    "@tagna/udiot": "file:../../udiot"
-  }
-}
-```
-
-After making changes to udiot:
-
-```bash
-# In the udiot directory:
-npm run build
-
-# In loompress:
-npm install   # Re-links the local package
-npm run dev   # Restart the dev server
-```
+LoomPress now consumes the published `@tagna/udiot` package by default. If you need to test local framework changes, switch the dependency to a local `file:` reference temporarily, run `npm install`, and then restart LoomPress.
 
 ---
 
@@ -248,7 +263,7 @@ npm run test:coverage
 - `services/` — test each service method with a real test database (or `pg-mem` in-memory Postgres for speed)
 - `multi-site/resolver.ts` — test hostname lookup and cache behavior
 - `auth/password.ts` — test hash and verify
-- `public-blog/permalink.ts` — test permalink generation for each pattern
+- `public/` — test public routing and permalink behavior for each pattern
 
 **What not to unit-test:**
 - Controllers (test these with integration tests instead)
@@ -260,7 +275,16 @@ npm run test:coverage
 
 ```bash
 npm run lint
-npm run lint:fix
 ```
 
-ESLint is configured in `eslint.config.ts` with the same rules as the udiot project. No Prettier — formatting is handled by ESLint's `@stylistic/eslint-plugin`.
+`npm run lint` currently runs the repository typecheck (`tsc --noEmit`). Use `npm run check` before opening a PR or publishing a release.
+
+## Install Flow
+
+LoomPress now has two setup phases:
+
+1. Installer mode at `/install/database` when `DATABASE_URL` or `SESSION_SECRET` is missing.
+2. Onboarding mode at `/` after the database is ready but before the first admin exists.
+
+Installer mode is intentionally outside the fully booted app so the database connection can be configured before normal middleware and services initialize.
+

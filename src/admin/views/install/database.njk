@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — LoomPress</title>
+  {{ (brandHeadHtml or defaultBrandHeadHtml) | safe }}
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body class="onboarding-body">
+  <main class="onboarding-shell">
+    <section class="onboarding-hero">
+      <p class="onboarding-hero__eyebrow">Installer</p>
+      <h1 class="onboarding-hero__title">Connect LoomPress to PostgreSQL first</h1>
+      <p class="onboarding-hero__copy">
+        This is the pre-bootstrap install step. LoomPress will verify the database connection,
+        run its migrations, generate a session secret when needed, and then continue to the site setup wizard.
+      </p>
+
+      <ol class="onboarding-steps">
+        <li class="onboarding-step-card">
+          <span class="onboarding-step-card__number">1</span>
+          <div>
+            <h2>Connect to the database</h2>
+            <p>Use a PostgreSQL connection string with permissions to create tables and extensions.</p>
+          </div>
+        </li>
+        <li class="onboarding-step-card">
+          <span class="onboarding-step-card__number">2</span>
+          <div>
+            <h2>Run migrations</h2>
+            <p>LoomPress will create the schema before the admin and site onboarding begins.</p>
+          </div>
+        </li>
+        <li class="onboarding-step-card">
+          <span class="onboarding-step-card__number">3</span>
+          <div>
+            <h2>Finish site setup</h2>
+            <p>After this step, the normal first-run wizard will collect theme, branding, and admin details.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="onboarding-panel">
+      {% if installerError %}
+        <div class="alert alert--error">{{ installerError }}</div>
+      {% endif %}
+
+      <form method="POST" action="/install/database" class="onboarding-form">
+        <section class="onboarding-section">
+          <div class="onboarding-section__header">
+            <span class="onboarding-section__step">Step 1</span>
+            <h2>Database</h2>
+          </div>
+
+          <div class="form-group">
+            <label for="database_url">Database URL</label>
+            <input
+              id="database_url"
+              name="database_url"
+              type="text"
+              required
+              class="form-input form-input--mono"
+              value="{{ values.database_url or '' }}"
+              placeholder="postgresql://postgres:password@localhost:5432/loompress"
+            >
+            <small class="form-help">
+              Example: <code>postgresql://postgres:password@localhost:5432/loompress</code>
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Detected admin base URL</label>
+            <input type="text" class="form-input" value="{{ suggestedAdminBaseUrl }}" readonly>
+            <small class="form-help">
+              This will be written to <code>ADMIN_BASE_URL</code> only if it is not already set.
+            </small>
+          </div>
+        </section>
+
+        <section class="onboarding-review">
+          <div>
+            <span class="onboarding-section__step">Step 2</span>
+            <h2>Prepare the application</h2>
+            <p>
+              LoomPress will verify the connection, run migrations, persist the configuration into
+              <code>.env</code>, and then continue to the site setup wizard.
+            </p>
+          </div>
+          <button type="submit" class="btn btn--primary onboarding-review__submit">Save Database and Continue</button>
+        </section>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

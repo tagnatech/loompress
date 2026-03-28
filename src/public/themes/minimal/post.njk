@@ -1,0 +1,40 @@
+{% extends "layout.njk" %}
+{% set canonicalPath = '/' + post.slug %}
+{% set ogType = 'article' if post.type == 'post' else 'website' %}
+{% set ogImage = post.featured_image_url %}
+
+{% block content %}
+<article class="post-single">
+  <h1 class="post-single__title">{{ post.title }}</h1>
+  <div class="post-single__meta">
+    <time datetime="{{ post.published_at }}">{{ post.published_at | formatDate('DD MMM YYYY') }}</time>
+    {% if post.author_name %}<span>{{ post.author_name }}</span>{% endif %}
+    <span>{{ post.body | readTime }}</span>
+  </div>
+
+  <div class="post-single__body">
+    {{ post.body | safe }}
+  </div>
+
+  {% if tags.length %}
+  <div class="post-tags">
+    {% for tag in tags %}
+      <a href="/tag/{{ tag.slug }}" class="post-tags__tag">#{{ tag.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <nav class="post-nav">
+    {% if prevPost %}
+      <a href="/{{ prevPost.slug }}">&larr; {{ prevPost.title }}</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+    {% if nextPost %}
+      <a href="/{{ nextPost.slug }}">{{ nextPost.title }} &rarr;</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+  </nav>
+</article>
+{% endblock %}

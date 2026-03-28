@@ -1,0 +1,41 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'tags' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Tags</h1>
+  <a href="/admin/tags/new" class="btn btn--primary">New Tag</a>
+</div>
+
+{% if tags.length %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Slug</th>
+      <th>Posts</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for tag in tags %}
+    <tr>
+      <td><a href="/admin/tags/{{ tag.id }}/edit">{{ tag.name }}</a></td>
+      <td>{{ tag.slug }}</td>
+      <td>{{ tag.post_count or 0 }}</td>
+      <td class="actions">
+        <a href="/admin/tags/{{ tag.id }}/edit" class="btn btn--sm">Edit</a>
+        <form method="POST" action="/admin/tags/{{ tag.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete this tag?')">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p class="empty-state">No tags yet.</p>
+{% endif %}
+{% endblock %}

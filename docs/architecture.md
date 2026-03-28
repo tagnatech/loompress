@@ -58,11 +58,11 @@ Caddy (reverse proxy + TLS)
 
 LoomPress uses **hostname-based multi-tenancy** for the public blog and **session-based site switching** for the admin panel.
 
-### Public Blog
+### Public
 When a request arrives at `blog.dudiba.com`, the `siteMiddleware` runs before any route handler:
 
 1. Reads `req.hostname` from the Express request.
-2. Looks up `cms_sites WHERE hostname = $1` in PostgreSQL.
+2. Looks up `lp_sites WHERE hostname = $1` in PostgreSQL.
 3. Caches the result in-process for 60 seconds (using udiot's `CacheManager`).
 4. Attaches the site record to `req.site`.
 5. If no site is found and the path is not `/admin`, returns 404.
@@ -74,7 +74,7 @@ The admin panel does **not** use hostname for site selection. Instead:
 
 - After login, the admin's user ID is stored in `req.session.userId`.
 - Superadmins land on a site-picker page and set `req.session.siteId` via a POST to `/admin/switch-site`.
-- Regular admins and authors are automatically scoped to the single site they are associated with (from `cms_site_users`).
+- Regular admins and authors are automatically scoped to the single site they are associated with (from `lp_site_users`).
 - Every admin request verifies `req.session.siteId` is set and the user has access to that site before proceeding.
 
 This design allows a superadmin to manage all sites from a single browser tab at a single URL (e.g. `cms.tagna.in`), without needing separate subdomains per site for the admin.
@@ -139,3 +139,4 @@ LoomPress is designed for small-to-medium blog traffic on a single VPS. For a si
 - ~10 MB/s upload throughput for media
 
 Horizontal scaling is possible: deploy multiple instances behind a load balancer, use a shared Postgres, and move the upload volume to object storage (e.g., Supabase Storage or S3). Session stickiness would be required if sessions stay in Postgres (they do by default with `connect-pg-simple`).
+

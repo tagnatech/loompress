@@ -1,6 +1,6 @@
 # Database Schema
 
-LoomPress uses PostgreSQL. All tables are prefixed `cms_` to avoid collisions when sharing a database (e.g. an existing Supabase project) with other applications.
+LoomPress uses PostgreSQL. All tables are prefixed `lp_` to avoid collisions when sharing a database (e.g. an existing Supabase project) with other applications.
 
 The full schema is in `src/db/migrations/001_initial_schema.sql`.
 
@@ -8,7 +8,7 @@ The full schema is in `src/db/migrations/001_initial_schema.sql`.
 
 ## Tables
 
-### `cms_sites`
+### `lp_sites`
 
 One row per website that LoomPress serves.
 
@@ -38,7 +38,7 @@ permalink_pattern = 'slug'
 
 ---
 
-### `cms_users`
+### `lp_users`
 
 CMS admin users. These are independent from any application's own user table (e.g. dudiba's Supabase auth users).
 
@@ -63,23 +63,23 @@ CMS admin users. These are independent from any application's own user table (e.
 
 ---
 
-### `cms_site_users`
+### `lp_site_users`
 
 Many-to-many: which users can access which sites, with an optional per-site role override.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `site_id` | `uuid` FK → `cms_sites(id)` | |
-| `user_id` | `uuid` FK → `cms_users(id)` | |
+| `site_id` | `uuid` FK → `lp_sites(id)` | |
+| `user_id` | `uuid` FK → `lp_users(id)` | |
 | `role` | `text` NOT NULL | Site-level role: `admin` \| `author` |
 
 Primary key: `(site_id, user_id)`
 
-The effective role for a user on a site is the **more permissive** of `cms_users.role` and `cms_site_users.role`. A `superadmin` does not need a `cms_site_users` row — they have access everywhere.
+The effective role for a user on a site is the **more permissive** of `lp_users.role` and `lp_site_users.role`. A `superadmin` does not need a `lp_site_users` row — they have access everywhere.
 
 ---
 
-### `cms_sessions`
+### `lp_sessions`
 
 Managed automatically by `connect-pg-simple`. Do not modify directly.
 
@@ -89,26 +89,26 @@ Managed automatically by `connect-pg-simple`. Do not modify directly.
 | `sess` | `jsonb` NOT NULL | Serialized session data (`userId`, `siteId`, flash messages) |
 | `expire` | `timestamptz` NOT NULL | Session expiry time |
 
-Index: `cms_sessions(expire)` — used by the built-in session cleanup.
+Index: `lp_sessions(expire)` — used by the built-in session cleanup.
 
 ---
 
-### `cms_posts`
+### `lp_posts`
 
 The main content table. Stores both blog posts (`type = 'post'`) and static pages (`type = 'page'`).
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` PK | Auto-generated |
-| `site_id` | `uuid` FK → `cms_sites(id)` ON DELETE CASCADE | |
-| `author_id` | `uuid` FK → `cms_users(id)` ON DELETE SET NULL | |
+| `site_id` | `uuid` FK → `lp_sites(id)` ON DELETE CASCADE | |
+| `author_id` | `uuid` FK → `lp_users(id)` ON DELETE SET NULL | |
 | `type` | `text` NOT NULL | `post` \| `page`, default `post` |
 | `slug` | `text` NOT NULL | URL slug, unique per site |
 | `title` | `text` NOT NULL | Post title |
 | `excerpt` | `text` | Optional short summary (used in post list cards) |
 | `body` | `text` NOT NULL | Full HTML content from the Trix editor |
 | `status` | `text` NOT NULL | `draft` \| `published` \| `private` \| `scheduled` |
-| `featured_image_id` | `uuid` FK → `cms_media(id)` ON DELETE SET NULL | |
+| `featured_image_id` | `uuid` FK → `lp_media(id)` ON DELETE SET NULL | |
 | `meta_title` | `text` | SEO: `<title>` tag override |
 | `meta_description` | `text` | SEO: `<meta name="description">` content |
 | `published_at` | `timestamptz` | When the post went/goes live |
@@ -120,8 +120,8 @@ The main content table. Stores both blog posts (`type = 'post'`) and static page
 
 **Indexes:**
 ```sql
-CREATE INDEX ON cms_posts (site_id, status, published_at DESC);
-CREATE INDEX ON cms_posts (site_id, slug);
+CREATE INDEX ON lp_posts (site_id, status, published_at DESC);
+CREATE INDEX ON lp_posts (site_id, slug);
 ```
 
 **Status state machine:**
@@ -139,15 +139,15 @@ published ──► private   (hidden from public, visible in admin)
 
 ---
 
-### `cms_categories`
+### `lp_categories`
 
 Hierarchical categories per site.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` PK | |
-| `site_id` | `uuid` FK → `cms_sites(id)` ON DELETE CASCADE | |
-| `parent_id` | `uuid` FK → `cms_categories(id)` ON DELETE SET NULL | `null` = top-level category |
+| `site_id` | `uuid` FK → `lp_sites(id)` ON DELETE CASCADE | |
+| `parent_id` | `uuid` FK → `lp_categories(id)` ON DELETE SET NULL | `null` = top-level category |
 | `name` | `text` NOT NULL | Display name |
 | `slug` | `text` NOT NULL | URL slug |
 | `description` | `text` | Optional category description |
@@ -156,14 +156,14 @@ Hierarchical categories per site.
 
 ---
 
-### `cms_tags`
+### `lp_tags`
 
 Flat tags per site (no hierarchy).
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` PK | |
-| `site_id` | `uuid` FK → `cms_sites(id)` ON DELETE CASCADE | |
+| `site_id` | `uuid` FK → `lp_sites(id)` ON DELETE CASCADE | |
 | `name` | `text` NOT NULL | |
 | `slug` | `text` NOT NULL | |
 
@@ -171,41 +171,41 @@ Flat tags per site (no hierarchy).
 
 ---
 
-### `cms_post_categories`
+### `lp_post_categories`
 
 Junction table linking posts to categories.
 
 | Column | Type |
 |--------|------|
-| `post_id` | `uuid` FK → `cms_posts(id)` ON DELETE CASCADE |
-| `category_id` | `uuid` FK → `cms_categories(id)` ON DELETE CASCADE |
+| `post_id` | `uuid` FK → `lp_posts(id)` ON DELETE CASCADE |
+| `category_id` | `uuid` FK → `lp_categories(id)` ON DELETE CASCADE |
 
 Primary key: `(post_id, category_id)`
 
 ---
 
-### `cms_post_tags`
+### `lp_post_tags`
 
 Junction table linking posts to tags.
 
 | Column | Type |
 |--------|------|
-| `post_id` | `uuid` FK → `cms_posts(id)` ON DELETE CASCADE |
-| `tag_id` | `uuid` FK → `cms_tags(id)` ON DELETE CASCADE |
+| `post_id` | `uuid` FK → `lp_posts(id)` ON DELETE CASCADE |
+| `tag_id` | `uuid` FK → `lp_tags(id)` ON DELETE CASCADE |
 
 Primary key: `(post_id, tag_id)`
 
 ---
 
-### `cms_media`
+### `lp_media`
 
 Uploaded files (images) per site.
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `uuid` PK | |
-| `site_id` | `uuid` FK → `cms_sites(id)` ON DELETE CASCADE | |
-| `uploaded_by` | `uuid` FK → `cms_users(id)` ON DELETE SET NULL | |
+| `site_id` | `uuid` FK → `lp_sites(id)` ON DELETE CASCADE | |
+| `uploaded_by` | `uuid` FK → `lp_users(id)` ON DELETE SET NULL | |
 | `filename` | `text` NOT NULL | Original filename from the upload |
 | `storage_path` | `text` NOT NULL | Absolute path on disk: `/uploads-data/dudiba/a1b2c3/photo.jpg` |
 | `public_url` | `text` NOT NULL | URL served to browsers: `/uploads/dudiba/a1b2c3/photo.jpg` |
@@ -221,26 +221,26 @@ Uploaded files (images) per site.
 ## Entity Relationship Diagram
 
 ```
-cms_sites
+lp_sites
     │
-    ├──< cms_site_users >── cms_users
+    ├──< lp_site_users >── lp_users
     │                           │
-    ├──< cms_posts ─────────────┘(author)
+    ├──< lp_posts ─────────────┘(author)
     │       │
-    │       ├──< cms_post_categories >── cms_categories
+    │       ├──< lp_post_categories >── lp_categories
     │       │                               (self-join parent_id)
-    │       ├──< cms_post_tags >── cms_tags
+    │       ├──< lp_post_tags >── lp_tags
     │       │
-    │       └── cms_media (featured_image_id)
+    │       └── lp_media (featured_image_id)
     │
-    └──< cms_media (all site media)
+    └──< lp_media (all site media)
 ```
 
 ---
 
 ## Running Migrations
 
-Migrations are plain SQL files in `src/db/migrations/`. They are applied in filename order on every startup by `src/db/migrate.ts`. The migrator tracks which files have been applied in a `_cms_migrations` table.
+Migrations are plain SQL files in `src/db/migrations/`. They are applied in filename order on every startup by `src/db/migrate.ts`. The migrator tracks which files have been applied in a `_lp_migrations` table.
 
 ```bash
 # Apply pending migrations manually
@@ -251,3 +251,4 @@ npm run migrate:reset
 ```
 
 New migration files should be named `NNN_description.sql` where `NNN` increments from the last file (e.g. `002_add_post_revisions.sql`).
+

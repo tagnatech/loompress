@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  {% if description %}
+  <meta name="description" content="{{ description }}">
+  {% endif %}
+  {{ (brandHeadHtml or defaultBrandHeadHtml) | safe }}
+  <link rel="canonical" href="{{ site.base_url }}{{ canonicalPath or '/' }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.name }} RSS Feed" href="{{ site.base_url }}/feed.xml">
+  <link rel="sitemap" type="application/xml" href="{{ site.base_url }}/sitemap.xml">
+
+  {# Open Graph #}
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description or site.tagline or '' }}">
+  <meta property="og:url" content="{{ site.base_url }}{{ canonicalPath or '/' }}">
+  <meta property="og:type" content="{{ ogType or 'website' }}">
+  {% if ogImage %}
+  <meta property="og:image" content="{{ ogImage }}">
+  {% endif %}
+
+  {# Twitter Card #}
+  <meta name="twitter:card" content="{{ twitterCard or 'summary_large_image' }}">
+  <meta name="twitter:title" content="{{ title }}">
+  <meta name="twitter:description" content="{{ description or site.tagline or '' }}">
+
+  {% if page > 1 %}
+  <link rel="prev" href="{{ site.base_url }}/page/{{ page - 1 }}">
+  {% endif %}
+  {% if page < totalPages %}
+  <link rel="next" href="{{ site.base_url }}/page/{{ page + 1 }}">
+  {% endif %}
+  {% if seoHeadHtml %}
+  {{ seoHeadHtml | safe }}
+  {% endif %}
+
+  <style>
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #222222;
+      --color-muted: #999999;
+      --color-border: #e5e5e5;
+      --color-hover: #555555;
+      --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --max-width: 640px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-stack);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--color-text); text-decoration: none; }
+    a:hover { color: var(--color-hover); }
+
+    .container { max-width: var(--max-width); margin: 0 auto; padding: 0 1.5rem; }
+
+    .site-header {
+      padding: 4rem 0 3rem;
+    }
+    .site-header__brand {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+    .site-header__logo {
+      height: 2.25rem;
+      width: auto;
+      flex-shrink: 0;
+    }
+    .site-header__name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .site-header__name a { color: var(--color-text); }
+
+    .site-footer {
+      margin-top: 4rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--color-border);
+      color: var(--color-muted);
+      font-size: 0.75rem;
+    }
+
+    .post-list-item {
+      padding: 0.6rem 0;
+    }
+    .post-list-item a {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .post-list-item__title {
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+    .post-list-item__date {
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .post-list-item a:hover .post-list-item__title {
+      color: var(--color-hover);
+    }
+
+    .post-single { margin-bottom: 3rem; }
+    .post-single__title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+    }
+    .post-single__meta {
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      margin-bottom: 2.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .post-single__body {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+    .post-single__body h1, .post-single__body h2, .post-single__body h3 {
+      margin: 2em 0 0.5em;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .post-single__body p { margin-bottom: 1.25em; }
+    .post-single__body img { max-width: 100%; }
+    .post-single__body blockquote {
+      border-left: 2px solid var(--color-border);
+      padding-left: 1rem;
+      margin: 1.5em 0;
+      color: var(--color-muted);
+    }
+    .post-single__body pre {
+      background: #f5f5f5;
+      color: #333;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1.5em 0;
+      font-size: 0.85rem;
+      border: 1px solid var(--color-border);
+    }
+    .post-single__body code {
+      font-size: 0.9em;
+      background: #f5f5f5;
+      padding: 0.1rem 0.3rem;
+    }
+    .post-single__body pre code { background: none; padding: 0; }
+    .post-single__body ul, .post-single__body ol { margin: 1em 0; padding-left: 1.5em; }
+
+    .post-tags { margin: 2rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .post-tags__tag {
+      color: var(--color-muted);
+      font-size: 0.8rem;
+    }
+    .post-tags__tag:hover { color: var(--color-text); }
+
+    .post-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--color-border);
+      font-size: 0.85rem;
+    }
+    .post-nav a { color: var(--color-muted); }
+    .post-nav a:hover { color: var(--color-text); }
+
+    .archive-header { margin-bottom: 1.5rem; }
+    .archive-header h1 { font-size: 1.125rem; font-weight: 600; }
+    .archive-header p { color: var(--color-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      font-size: 0.85rem;
+    }
+    .pagination a { color: var(--color-muted); }
+    .pagination a:hover { color: var(--color-text); }
+    .pagination span { color: var(--color-muted); }
+  </style>
+  {% if site.custom_css %}
+  <style>{{ site.custom_css | safe }}</style>
+  {% endif %}
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    <header class="site-header">
+      <div class="site-header__brand">
+        {% if site.logo_url %}
+          <img src="{{ site.logo_url }}" alt="{{ site.name }}" class="site-header__logo">
+        {% endif %}
+        <div class="site-header__name"><a href="/">{{ site.name }}</a></div>
+      </div>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; {{ site.name }} &middot; Powered by <a href="https://github.com/tagnatech/loompress">LoomPress</a></p>
+    </footer>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

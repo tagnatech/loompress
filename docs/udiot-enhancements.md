@@ -101,7 +101,7 @@ engine.express(app);
 
 ### `session.ts`
 
-**Purpose:** Creates an Express session middleware backed by a PostgreSQL session store. Sessions persist across process restarts. The `cms_sessions` table is created automatically by `connect-pg-simple` on first run.
+**Purpose:** Creates an Express session middleware backed by a PostgreSQL session store. Sessions persist across process restarts. The `lp_sessions` table is created automatically by `connect-pg-simple` on first run.
 
 **Export:**
 ```typescript
@@ -131,7 +131,7 @@ app.use(createSessionMiddleware({
 }));
 ```
 
-**Session data shape** (stored in `cms_sessions.sess`):
+**Session data shape** (stored in `lp_sessions.sess`):
 ```typescript
 declare module 'express-session' {
   interface SessionData {
@@ -263,3 +263,4 @@ These utilities (session management, template engines, file uploads, CSRF) are g
 Adding them to `@tagna/udiot/server` keeps LoomPress's `src/` focused on business logic, and makes the framework genuinely capable of building full-stack server-rendered applications — consistent with the existing `@tagna/udiot/ssg` and `@tagna/udiot/node` exports.
 
 Future udiot apps that need server rendering should import from `@tagna/udiot/server` rather than installing `express-session`, `nunjucks`, and `multer` independently.
+

@@ -1,0 +1,43 @@
+{% extends "layout.njk" %}
+{% set canonicalPath = '/category/' + category.slug %}
+
+{% block content %}
+<div class="archive-header">
+  <h1>{{ category.name }}</h1>
+  {% if category.description %}
+    <p>{{ category.description }}</p>
+  {% endif %}
+</div>
+
+<div class="post-grid">
+{% for post in posts %}
+  <article class="post-card">
+    {% if post.featured_image_url %}
+      <img src="{{ post.featured_image_url }}" alt="{{ post.title }}" class="post-card__image" loading="lazy">
+    {% endif %}
+    <div class="post-card__body">
+      <h2 class="post-card__title"><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+      <div class="post-card__meta">
+        <time datetime="{{ post.published_at }}">{{ post.published_at | formatDate('DD MMM YYYY') }}</time>
+        {% if post.author_name %}<span>{{ post.author_name }}</span>{% endif %}
+      </div>
+      <p class="post-card__excerpt">{{ post.excerpt or (post.body | stripHtml | truncate(150)) }}</p>
+    </div>
+  </article>
+{% else %}
+  <p style="text-align:center; color: var(--color-text-muted); padding: 3rem 0; grid-column: 1/-1;">No posts in this category.</p>
+{% endfor %}
+</div>
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="/category/{{ category.slug }}{% if page > 2 %}/page/{{ page - 1 }}{% endif %}">&laquo; Newer</a>
+  {% endif %}
+  <span>Page {{ page }} of {{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/category/{{ category.slug }}/page/{{ page + 1 }}">Older &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "layout.njk" %}
+
+{% block head %}
+  <link rel="stylesheet" href="{{ assetBase }}/hello-world.css">
+{% endblock %}
+
+{% block content %}
+  <section class="plugin-panel">
+    <p class="plugin-panel__eyebrow">Plugin Demo</p>
+    <h1>Hello from {{ plugin.name }}</h1>
+    <p class="text-muted">This page is rendered from a plugin-owned Nunjucks view directory.</p>
+    <ul class="plugin-panel__list">
+      <li>Slug: <code>{{ plugin.slug }}</code></li>
+      <li>Entry: <code>{{ plugin.entryPath }}</code></li>
+      <li>Static assets: <code>{{ assetBase }}</code></li>
+    </ul>
+  </section>
+{% endblock %}

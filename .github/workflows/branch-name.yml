@@ -1,0 +1,37 @@
+name: Branch Name
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+
+jobs:
+  branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch naming policy
+        shell: bash
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            exit 0
+          fi
+
+          if [[ "$BRANCH_NAME" =~ ^feature\/[a-z0-9._-]+$ ]]; then
+            exit 0
+          fi
+
+          echo "::error title=Invalid branch name::'$BRANCH_NAME' is not allowed. Use 'main' or 'feature/<slug>'."
+          exit 1

@@ -1,0 +1,65 @@
+{
+  "name": "loompress",
+  "version": "1.0.0",
+  "description": "A lightweight, multi-site blog CMS built with @tagna/udiot",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc && npm run copy-assets",
+    "copy-assets": "node -e \"const{cpSync}=require('fs');['admin/views','admin/public','public/themes','db/migrations','assets'].forEach(d=>{try{cpSync('src/'+d,'dist/'+d,{recursive:true})}catch{}})\"",
+    "start": "node dist/server.js",
+    "migrate": "tsx src/db/migrate.ts",
+    "migrate:reset": "tsx src/db/migrate.ts --reset",
+    "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "seed:site": "tsx src/scripts/seed-site.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run lint && npm test && npm run build"
+  },
+  "keywords": [
+    "cms",
+    "blog",
+    "multi-site",
+    "udiot",
+    "typescript"
+  ],
+  "author": "Tagnatech",
+  "license": "MIT",
+  "dependencies": {
+    "@mikro-orm/core": "^7.0.5",
+    "@mikro-orm/migrations": "^7.0.5",
+    "@mikro-orm/postgresql": "^7.0.5",
+    "@supabase/supabase-js": "^2.100.0",
+    "@tagna/udiot": "^0.9.0",
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "express-session": "^1.19.0",
+    "multer": "^2.1.1",
+    "nunjucks": "^3.2.4",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "sanitize-html": "^2.17.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.5",
+    "@types/express-session": "^1.18.2",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.20.0",
+    "@types/sanitize-html": "^2.16.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

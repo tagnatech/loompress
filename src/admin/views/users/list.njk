@@ -1,0 +1,41 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'users' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Users</h1>
+  <a href="/admin/users/new" class="btn btn--primary">Add User</a>
+</div>
+
+{% if users.length %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.display_name }}</td>
+      <td>{{ user.email }}</td>
+      <td><span class="badge badge--{{ user.site_role }}">{{ user.site_role }}</span></td>
+      <td class="actions">
+        <a href="/admin/users/{{ user.id }}/edit" class="btn btn--sm">Edit Role</a>
+        <form method="POST" action="/admin/users/{{ user.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Remove this user from the site?')">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm btn--danger">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p class="empty-state">No users for this site.</p>
+{% endif %}
+{% endblock %}

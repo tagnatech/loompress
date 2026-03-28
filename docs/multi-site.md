@@ -9,7 +9,7 @@ LoomPress is a multi-tenant CMS. One running instance serves multiple websites s
 When a request arrives at the LoomPress Express process, the `siteMiddleware` resolves the site from `req.hostname`:
 
 1. Looks up the hostname in a 60-second in-process cache.
-2. On cache miss, queries `SELECT * FROM cms_sites WHERE hostname = $1`.
+2. On cache miss, queries `SELECT * FROM lp_sites WHERE hostname = $1`.
 3. Attaches the result to `req.site: SiteContext | null`.
 4. If no site is found and the request path is not under `/admin`, returns a 404.
 
@@ -21,10 +21,10 @@ All route handlers and services receive `req.site.id` as the isolation key. Ever
 
 Adding a new site requires three steps. There is no code change and no process restart.
 
-### Step 1: Insert a row in `cms_sites`
+### Step 1: Insert a row in `lp_sites`
 
 ```sql
-INSERT INTO cms_sites (hostname, name, slug, tagline, base_url, timezone, permalink_pattern)
+INSERT INTO lp_sites (hostname, name, slug, tagline, base_url, timezone, permalink_pattern)
 VALUES (
   'blog.herOreh.com',
   'HerOreH Blog',
@@ -72,7 +72,7 @@ That's it. The new site is now live. Navigate to `https://cms.tagna.in/admin`, l
 ## Site Isolation Details
 
 ### Database isolation
-All tables that contain site-specific data have a `site_id` column with a foreign key to `cms_sites(id)`. Cascade delete is enabled — deleting a site row removes all associated posts, categories, tags, media records, and site-user associations automatically.
+All tables that contain site-specific data have a `site_id` column with a foreign key to `lp_sites(id)`. Cascade delete is enabled — deleting a site row removes all associated posts, categories, tags, media records, and site-user associations automatically.
 
 Service methods always require `siteId` as a parameter:
 ```typescript
@@ -106,7 +106,7 @@ All cache keys are namespaced: `blog:{siteId}:posts:page:1`. A cache clear trigg
 | Upload media | ✓ | ✓ | ✓ |
 | Edit site settings | ✓ | ✓ | — |
 
-A superadmin does not need an entry in `cms_site_users` — their global `role = 'superadmin'` in `cms_users` grants full access everywhere.
+A superadmin does not need an entry in `lp_site_users` — their global `role = 'superadmin'` in `lp_users` grants full access everywhere.
 
 ---
 
@@ -114,7 +114,7 @@ A superadmin does not need an entry in `cms_site_users` — their global `role =
 
 ```sql
 -- This cascades: deletes all posts, categories, tags, media records, site_users
-DELETE FROM cms_sites WHERE slug = 'herOreh';
+DELETE FROM lp_sites WHERE slug = 'herOreh';
 ```
 
 Then remove the Caddy block and reload. Uploaded files on disk are **not** automatically deleted by the database cascade — run:
@@ -160,3 +160,4 @@ LoomPress process: cms:4100
   req.hostname = 'blog.herOreh.com'  → req.site = { id: '...', slug: 'herOreh', ... }
   req.hostname = 'cms.tagna.in'      → req.site = null  (admin panel, site from session)
 ```
+

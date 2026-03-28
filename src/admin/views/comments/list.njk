@@ -1,0 +1,74 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'comments' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Comments</h1>
+</div>
+
+<div class="filter-bar">
+  <a href="/admin/comments" class="filter-link {% if status == 'all' %}filter-link--active{% endif %}">All ({{ counts.total }})</a>
+  <a href="/admin/comments?status=pending" class="filter-link {% if status == 'pending' %}filter-link--active{% endif %}">Pending ({{ counts.pending }})</a>
+  <a href="/admin/comments?status=approved" class="filter-link {% if status == 'approved' %}filter-link--active{% endif %}">Approved ({{ counts.approved }})</a>
+  <a href="/admin/comments?status=spam" class="filter-link {% if status == 'spam' %}filter-link--active{% endif %}">Spam ({{ counts.spam }})</a>
+</div>
+
+{% if comments.length %}
+<div class="comment-list">
+  {% for comment in comments %}
+  <div class="comment-card comment-card--{{ comment.status }}">
+    <div class="comment-card__header">
+      <strong>{{ comment.author_name }}</strong>
+      <span class="text-muted">&lt;{{ comment.author_email }}&gt;</span>
+      <span class="badge badge--{{ comment.status }}">{{ comment.status }}</span>
+      <span class="text-muted comment-card__date">{{ comment.created_at | formatDate('DD MMM YYYY HH:mm') }}</span>
+    </div>
+    {% if comment.post_title %}
+      <div class="comment-card__post">on <a href="/admin/posts/{{ comment.post_id }}/edit">{{ comment.post_title }}</a></div>
+    {% endif %}
+    <div class="comment-card__body">{{ comment.body | truncate(300) }}</div>
+    <div class="comment-card__actions">
+      {% if comment.status != 'approved' %}
+        <form method="POST" action="/admin/comments/{{ comment.id }}/approve" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm btn--success">Approve</button>
+        </form>
+      {% endif %}
+      {% if comment.status != 'rejected' %}
+        <form method="POST" action="/admin/comments/{{ comment.id }}/reject" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm btn--warning">Reject</button>
+        </form>
+      {% endif %}
+      {% if comment.status != 'spam' %}
+        <form method="POST" action="/admin/comments/{{ comment.id }}/spam" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm">Spam</button>
+        </form>
+      {% endif %}
+      <form method="POST" action="/admin/comments/{{ comment.id }}/delete" style="display:inline"
+            onsubmit="return confirm('Delete this comment permanently?')">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="/admin/comments?page={{ page - 1 }}{% if status != 'all' %}&status={{ status }}{% endif %}">&laquo; Prev</a>
+  {% endif %}
+  <span class="pagination__info">Page {{ page }} of {{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/admin/comments?page={{ page + 1 }}{% if status != 'all' %}&status={{ status }}{% endif %}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+  <p class="empty-state">No comments found.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'menus' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Menus</h1>
+</div>
+
+<div class="filter-bar">
+  {% for loc in locations %}
+    <a href="/admin/menus?location={{ loc }}" class="filter-link {% if location == loc %}filter-link--active{% endif %}">{{ loc | capitalize }}</a>
+  {% endfor %}
+</div>
+
+<form method="POST" action="/admin/menus">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  <input type="hidden" name="location" value="{{ location }}">
+
+  <div class="menu-editor" id="menu-editor">
+    {% if items.length %}
+      {% for item in items %}
+      <div class="menu-item">
+        <div class="form-group form-group--inline">
+          <input type="text" name="labels" class="form-control" value="{{ item.label }}" placeholder="Label">
+          <input type="text" name="urls" class="form-control" value="{{ item.url }}" placeholder="URL (e.g. /about)">
+          <button type="button" class="btn btn--sm btn--danger" onclick="this.closest('.menu-item').remove()">Remove</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <button type="button" class="btn btn--sm" onclick="addMenuItem()" style="margin: 1rem 0;">+ Add Menu Item</button>
+
+  <div>
+    <button type="submit" class="btn btn--primary">Save Menu</button>
+  </div>
+</form>
+
+<script>
+function addMenuItem() {
+  const editor = document.getElementById('menu-editor');
+  const div = document.createElement('div');
+  div.className = 'menu-item';
+  div.innerHTML = `
+    <div class="form-group form-group--inline">
+      <input type="text" name="labels" class="form-control" placeholder="Label">
+      <input type="text" name="urls" class="form-control" placeholder="URL (e.g. /about)">
+      <button type="button" class="btn btn--sm btn--danger" onclick="this.closest('.menu-item').remove()">Remove</button>
+    </div>
+  `;
+  editor.appendChild(div);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'sites' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Sites</h1>
+  <a href="/admin/sites/new" class="btn btn--primary">New Site</a>
+</div>
+
+{% if sites.length %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Hostname</th>
+      <th>Theme</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for site in sites %}
+    <tr>
+      <td>{{ site.name }}</td>
+      <td>{{ site.hostname }}</td>
+      <td>{{ site.theme or 'default' }}</td>
+      <td class="actions">
+        <form method="POST" action="/admin/switch-site" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <input type="hidden" name="siteId" value="{{ site.id }}">
+          <button type="submit" class="btn btn--sm btn--primary">Switch</button>
+        </form>
+        <a href="/admin/sites/{{ site.id }}/edit" class="btn btn--sm">Settings</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p class="empty-state">No sites yet. <a href="/admin/sites/new">Create the first site</a>.</p>
+{% endif %}
+{% endblock %}

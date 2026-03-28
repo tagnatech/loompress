@@ -31,12 +31,22 @@ DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
 SESSION_SECRET=your-strong-random-session-secret
 
 # File uploads
+ASSETS_DIR=/app/assets
 UPLOAD_DIR=/app/uploads-data
 UPLOAD_MAX_SIZE_MB=20
 
+# Reverse proxy support (required behind Caddy/Nginx)
+TRUST_PROXY=1
+
 # Optional: base URL for the admin (used in emails / links)
 ADMIN_BASE_URL=https://cms.tagna.in
+
+# Optional: runtime plugins
+PLUGINS_DIR=/app/plugins
+# PLUGINS=/app/plugins/my-plugin,/app/plugins/another-plugin
 ```
+
+If you prefer, you can deploy without `DATABASE_URL` and `SESSION_SECRET`, start the container, and complete the database step from `https://your-domain/install/database`. LoomPress will write those values into `.env` inside the container filesystem. In Docker deployments, explicit environment variables are still the better production default.
 
 ---
 
@@ -59,10 +69,15 @@ services:
       PORT: 4100
       DATABASE_URL: ${CMS_DATABASE_URL}
       SESSION_SECRET: ${CMS_SESSION_SECRET}
+      ASSETS_DIR: /app/assets
       UPLOAD_DIR: /app/uploads-data
       UPLOAD_MAX_SIZE_MB: 20
+      TRUST_PROXY: 1
+      PLUGINS_DIR: /app/plugins
     volumes:
+      - cms-assets:/app/assets
       - cms-uploads:/app/uploads-data
+      - ./plugins:/app/plugins:ro
     expose:
       - "4100"
     healthcheck:
@@ -73,6 +88,7 @@ services:
       start_period: 20s
 
 volumes:
+  cms-assets:
   cms-uploads:
 ```
 
@@ -102,6 +118,8 @@ WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY package.json .
+RUN mkdir -p /app/plugins
+RUN mkdir -p /app/assets
 RUN mkdir -p /app/uploads-data
 EXPOSE 4100
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
@@ -140,6 +158,10 @@ blog.dudiba.com {
     root * /volumes/cms-uploads
     file_server
   }
+  handle /assets/* {
+    root * /volumes/cms-assets
+    file_server
+  }
   reverse_proxy cms:4100
 }
 
@@ -152,6 +174,10 @@ cms.tagna.in {
   }
   handle /uploads/* {
     root * /volumes/cms-uploads
+    file_server
+  }
+  handle /assets/* {
+    root * /volumes/cms-assets
     file_server
   }
   reverse_proxy cms:4100
@@ -182,7 +208,7 @@ docker compose exec cms node dist/db/migrate.js
 docker compose exec cms node dist/scripts/seed-admin.js \
   --email admin@tagna.in \
   --name "Haris" \
-  --password "changeme123"
+  --password "change-me-now-123"
 
 # 5. Create the first site
 docker compose exec cms node dist/scripts/seed-site.js \
@@ -193,6 +219,8 @@ docker compose exec cms node dist/scripts/seed-site.js \
 ```
 
 After step 5, visit `https://cms.tagna.in/admin/login` to access the admin panel.
+
+If you deploy plugins, mount them into `/app/plugins` or point `PLUGINS` at their exact locations.
 
 ---
 
@@ -216,7 +244,7 @@ Migrations are idempotent — running them again when there are no new files is 
 ## Backup
 
 ### Database
-The `cms_*` tables live in the same Postgres instance as the rest of your application. They are included in any full-database backup. No extra steps required.
+The `lp_*` tables live in the same Postgres instance as the rest of your application. They are included in any full-database backup. No extra steps required.
 
 ### Uploaded files
 The `cms-uploads` Docker volume contains all uploaded media. Back it up with:
@@ -229,6 +257,9 @@ docker run --rm \
 ```
 
 Add this to your existing backup cron job.
+
+### User assets
+The `cms-assets` Docker volume contains the user-managed `/assets/*` files. Back it up alongside uploads if you rely on custom logos, scripts, or static image files stored there.
 
 ---
 
@@ -251,3 +282,4 @@ The `/health` endpoint returns:
 ```
 
 It verifies the database connection on each call. Docker and Caddy use this for health monitoring.
+

@@ -1,0 +1,56 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'pages' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Pages</h1>
+  <a href="/admin/pages/new" class="btn btn--primary">New Page</a>
+</div>
+
+{% if pages.length %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Slug</th>
+      <th>Status</th>
+      <th>Updated</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pg in pages %}
+    <tr>
+      <td><a href="/admin/pages/{{ pg.id }}/edit">{{ pg.title }}</a></td>
+      <td class="text-muted">/{{ pg.slug }}</td>
+      <td><span class="badge badge--{{ pg.status }}">{{ pg.status }}</span></td>
+      <td>{{ pg.updated_at | formatDate('DD MMM YYYY') }}</td>
+      <td class="actions">
+        <a href="/admin/pages/{{ pg.id }}/edit" class="btn btn--sm">Edit</a>
+        <form method="POST" action="/admin/pages/{{ pg.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete this page?')">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if totalPages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="/admin/pages?page={{ page - 1 }}">&laquo; Prev</a>
+  {% endif %}
+  <span class="pagination__info">Page {{ page }} of {{ totalPages }}</span>
+  {% if page < totalPages %}
+    <a href="/admin/pages?page={{ page + 1 }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+  <p class="empty-state">No pages yet. <a href="/admin/pages/new">Create your first page</a>.</p>
+{% endif %}
+{% endblock %}

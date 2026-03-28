@@ -1,0 +1,70 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'media' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Media Library</h1>
+</div>
+
+<div class="upload-zone">
+  <form method="POST" action="/admin/media/upload" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <div class="upload-area" id="upload-area">
+      <p>Drag & drop files here or click to browse</p>
+      <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" id="file-input">
+    </div>
+    <button type="submit" class="btn btn--primary">Upload</button>
+  </form>
+</div>
+
+{% if media.length %}
+<div class="media-grid">
+  {% for item in media %}
+  <div class="media-card">
+    <div class="media-card__image">
+      <img src="{{ item.public_url }}" alt="{{ item.alt_text or item.filename }}" loading="lazy">
+    </div>
+    <div class="media-card__info">
+      <div class="media-card__filename">{{ item.filename }}</div>
+      <input type="text" class="form-input form-input--sm" value="{{ item.alt_text or '' }}"
+             placeholder="Alt text"
+             onchange="updateAlt('{{ item.id }}', this.value)">
+      <form method="POST" action="/admin/media/{{ item.id }}/delete" style="margin-top:0.25rem"
+            onsubmit="return confirm('Delete this file?')">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button type="submit" class="btn btn--sm btn--danger">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <p class="empty-state">No media uploaded yet.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function updateAlt(id, altText) {
+    fetch('/admin/media/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrfToken }}' },
+      body: JSON.stringify({ altText })
+    });
+  }
+
+  // Drag and drop
+  const area = document.getElementById('upload-area');
+  const input = document.getElementById('file-input');
+  if (area && input) {
+    area.addEventListener('click', () => input.click());
+    area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('upload-area--hover'); });
+    area.addEventListener('dragleave', () => area.classList.remove('upload-area--hover'));
+    area.addEventListener('drop', (e) => {
+      e.preventDefault();
+      area.classList.remove('upload-area--hover');
+      input.files = e.dataTransfer.files;
+    });
+  }
+</script>
+{% endblock %}

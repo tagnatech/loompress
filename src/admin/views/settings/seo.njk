@@ -1,0 +1,42 @@
+{% extends "../layout.njk" %}
+{% set activeNav = 'settings' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>SEO Settings</h1>
+</div>
+
+<div class="settings-nav">
+  <a href="/admin/settings" class="settings-nav__link">General</a>
+  <a href="/admin/settings/comments" class="settings-nav__link">Comments</a>
+  <a href="/admin/settings/seo" class="settings-nav__link settings-nav__link--active">SEO</a>
+  <a href="/admin/settings/themes" class="settings-nav__link">Themes</a>
+</div>
+
+<form method="POST" action="/admin/settings/seo">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  <div class="settings-section">
+    <div class="form-group">
+      <label for="meta_title_suffix">Title suffix</label>
+      <input type="text" name="meta_title_suffix" id="meta_title_suffix" class="form-control" value="{{ settings['seo.meta_title_suffix'] }}" placeholder="e.g. | My Blog">
+      <small class="form-help">Appended to every page title (e.g., "My Post | My Blog")</small>
+    </div>
+
+    <div class="form-group">
+      <label for="default_meta_description">Default meta description</label>
+      <textarea name="default_meta_description" id="default_meta_description" class="form-control" rows="3">{{ settings['seo.default_meta_description'] }}</textarea>
+      <small class="form-help">Used when a page doesn't have its own meta description</small>
+    </div>
+
+    <div class="form-group form-group--checkbox">
+      <label>
+        <input type="checkbox" name="noindex_archives" {{ 'checked' if settings['seo.noindex_archives'] == 'true' }}>
+        Add <code>noindex</code> to archive pages (categories, tags, pagination)
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn--primary">Save SEO Settings</button>
+</form>
+{% endblock %}

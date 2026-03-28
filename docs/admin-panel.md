@@ -20,12 +20,12 @@ After login, the admin is the same regardless of which hostname you reached it f
 
 ### Login
 `GET /admin/login` → renders the login form
-`POST /admin/login` → validates email + bcrypt password, sets `req.session.userId`, redirects
+`POST /admin/login` → validates email + bcrypt password, regenerates the session, sets `req.session.userId`, redirects
 
-If login fails, a flash error message is shown on the login form. The `last_login_at` field in `cms_users` is updated on success.
+If login fails, a flash error message is shown on the login form. The `last_login_at` field in `lp_users` is updated on success.
 
 ### Session
-Sessions are stored in the `cms_sessions` table. The session cookie (`loompress.sid`) is:
+Sessions are stored in the `lp_sessions` table. The session cookie (`loompress.sid`) is:
 - HttpOnly
 - Secure in production (HTTPS only)
 - SameSite: Lax
@@ -40,9 +40,10 @@ Two Express middleware functions protect admin routes:
 ```typescript
 requireAuth       // Redirects to /admin/login if no valid session
 requireSiteAccess // Returns 403 if user is not associated with req.session.siteId
+requireSiteRole   // Restricts site-level management routes (users/settings/comments/menus)
 ```
 
-Every admin route (except `/admin/login`) is wrapped with `requireAuth`. Routes that operate on site content are additionally wrapped with `requireSiteAccess`.
+Every admin route (except `/admin/login`) is wrapped with `requireAuth`. Routes that operate on site content are additionally wrapped with `requireSiteAccess`. Site configuration routes additionally require a site `admin` role, while `/admin/sites` remains superadmin-only.
 
 ---
 
@@ -53,6 +54,8 @@ After a superadmin logs in, `req.session.siteId` is not set. They are redirected
 The current site name is shown in the admin sidebar header. A "Switch Site" link is always visible for superadmins.
 
 Regular admins are automatically scoped to their site at login — no picker is shown.
+
+If runtime plugins are installed, they can add extra links to the bottom of the admin sidebar.
 
 ---
 
@@ -126,6 +129,8 @@ POST /admin/users/:id/edit     Update role
 POST /admin/users/:id/delete   Remove from site (does not delete the user record)
 ```
 
+User creation enforces a minimum password length and does not auto-link existing accounts by password.
+
 ---
 
 ## Post Editor
@@ -170,8 +175,9 @@ The media library at `/admin/media` shows all uploaded images for the current si
 - Standard file `<input type="file">` fallback
 - Allowed types: JPEG, PNG, WebP, GIF
 - Max size: 20 MB per file (configurable in `.env`)
+- Uploaded files are verified by file signature server-side before they are accepted
 - Files are stored at `/uploads-data/{site.slug}/{uuid}/{filename}`
-- The public URL `/uploads/{site.slug}/{uuid}/{filename}` is stored in `cms_media.public_url`
+- The public URL `/uploads/{site.slug}/{uuid}/{filename}` is stored in `lp_media.public_url`
 
 ### Selecting a featured image
 In the post editor, clicking "Set featured image" opens a modal overlay that renders the media library. Clicking an image in the modal sets the hidden `featured_image_id` input and shows a thumbnail preview next to the button.
@@ -225,3 +231,4 @@ src/admin/views/
     ├── list.njk        Table of site users with roles
     └── edit.njk        Email, display name, role selector
 ```
+
