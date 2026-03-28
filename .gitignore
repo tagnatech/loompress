@@ -3,8 +3,8 @@ dist/
 coverage/
 .nyc_output/
 *.tsbuildinfo
-uploads-data/
-uploads/
+/uploads-data/
+/uploads/
 .env
 .env.*
 !.env.example
