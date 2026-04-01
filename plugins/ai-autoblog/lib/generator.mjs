@@ -473,13 +473,26 @@ function buildFeaturedImagePrompt(site, settings, draft) {
   return fragments.join(' ');
 }
 
+function decodeHtmlEntitiesIfNeeded(value) {
+  if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
+    return value;
+  }
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+
 function sanitizeRichText(input) {
   const html = sanitizeMultiline(input, 200_000);
   if (!html) {
     return '';
   }
 
-  return sanitizeHtml(html, {
+  return sanitizeHtml(decodeHtmlEntitiesIfNeeded(html), {
     allowedTags: RICH_TEXT_TAGS,
     allowedAttributes: RICH_TEXT_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],
