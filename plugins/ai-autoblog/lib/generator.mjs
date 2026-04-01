@@ -473,13 +473,31 @@ function buildFeaturedImagePrompt(site, settings, draft) {
   return fragments.join(' ');
 }
 
+const ENTITY_MAP = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#039;': "'",
+  '&apos;': "'",
+};
+const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
+
+function decodeHtmlEntitiesIfNeeded(value) {
+  if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
+    return value;
+  }
+  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+}
+
 function sanitizeRichText(input) {
   const html = sanitizeMultiline(input, 200_000);
   if (!html) {
     return '';
   }
 
-  return sanitizeHtml(html, {
+  return sanitizeHtml(decodeHtmlEntitiesIfNeeded(html), {
     allowedTags: RICH_TEXT_TAGS,
     allowedAttributes: RICH_TEXT_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],

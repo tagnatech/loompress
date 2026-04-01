@@ -37,13 +37,39 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
   '*': ['class'],
 };
 
+/**
+ * If the entire string is HTML-entity-encoded (no real tags, only `&lt;` /
+ * `&gt;` sequences that look like tag boundaries), decode one level of
+ * entities so that `sanitize-html` can parse the actual markup.
+ *
+ * This commonly happens when an LLM returns HTML inside a JSON string field
+ * with the tags entity-escaped.
+ */
+const ENTITY_MAP: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#039;': "'",
+  '&apos;': "'",
+};
+const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
+
+function decodeHtmlEntitiesIfNeeded(value: string): string {
+  if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
+    return value;
+  }
+  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+}
+
 export function sanitizeRichText(input: unknown): string {
   const html = sanitizeMultilineText(input, 200_000);
   if (!html) {
     return '';
   }
 
-  return sanitizeHtml(html, {
+  return sanitizeHtml(decodeHtmlEntitiesIfNeeded(html), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],
