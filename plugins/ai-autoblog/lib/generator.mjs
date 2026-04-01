@@ -473,17 +473,22 @@ function buildFeaturedImagePrompt(site, settings, draft) {
   return fragments.join(' ');
 }
 
+const ENTITY_MAP = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#039;': "'",
+  '&apos;': "'",
+};
+const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
+
 function decodeHtmlEntitiesIfNeeded(value) {
   if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
     return value;
   }
-  return value
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&apos;/g, "'");
+  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
 }
 
 function sanitizeRichText(input) {

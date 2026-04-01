@@ -45,17 +45,22 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
  * This commonly happens when an LLM returns HTML inside a JSON string field
  * with the tags entity-escaped.
  */
+const ENTITY_MAP: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#039;': "'",
+  '&apos;': "'",
+};
+const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
+
 function decodeHtmlEntitiesIfNeeded(value: string): string {
   if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
     return value;
   }
-  return value
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&apos;/g, "'");
+  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
 }
 
 export function sanitizeRichText(input: unknown): string {
