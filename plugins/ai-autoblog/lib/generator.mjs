@@ -484,11 +484,28 @@ const ENTITY_MAP = {
 };
 const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
 
-function decodeHtmlEntitiesIfNeeded(value) {
-  if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
+function decodeEncodedHtmlIfNeeded(value) {
+  const hasRealTags = /<[a-z/]/i.test(value);
+  if (hasRealTags) {
     return value;
   }
-  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+
+  if (/%3C[a-z/]/i.test(value)) {
+    try {
+      const decoded = decodeURIComponent(value);
+      if (/<[a-z/]/i.test(decoded)) {
+        return decoded;
+      }
+    } catch {
+      // malformed percent sequences — fall through
+    }
+  }
+
+  if (/&lt;[a-z/]/i.test(value)) {
+    return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+  }
+
+  return value;
 }
 
 function sanitizeRichText(input) {
@@ -497,7 +514,7 @@ function sanitizeRichText(input) {
     return '';
   }
 
-  return sanitizeHtml(decodeHtmlEntitiesIfNeeded(html), {
+  return sanitizeHtml(decodeEncodedHtmlIfNeeded(html), {
     allowedTags: RICH_TEXT_TAGS,
     allowedAttributes: RICH_TEXT_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],
