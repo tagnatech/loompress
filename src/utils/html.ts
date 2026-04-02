@@ -38,12 +38,12 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
 };
 
 /**
- * If the entire string is HTML-entity-encoded (no real tags, only `&lt;` /
- * `&gt;` sequences that look like tag boundaries), decode one level of
- * entities so that `sanitize-html` can parse the actual markup.
+ * If the string contains no real HTML tags but appears to be encoded HTML,
+ * decode it so `sanitize-html` can parse the actual markup.
  *
- * This commonly happens when an LLM returns HTML inside a JSON string field
- * with the tags entity-escaped.
+ * Handles two common LLM output patterns:
+ *   1. HTML-entity-encoded: `&lt;p&gt;` instead of `<p>`
+ *   2. URL/percent-encoded: `%3Cp%3E` instead of `<p>`
  */
 const ENTITY_MAP: Record<string, string> = {
   '&amp;': '&',
@@ -56,11 +56,30 @@ const ENTITY_MAP: Record<string, string> = {
 };
 const ENTITY_RE = /&(?:amp|lt|gt|quot|apos|#0?39);/g;
 
-function decodeHtmlEntitiesIfNeeded(value: string): string {
-  if (/<[a-z/]/i.test(value) || !/&lt;[a-z/]/i.test(value)) {
+function decodeEncodedHtmlIfNeeded(value: string): string {
+  const hasRealTags = /<[a-z/]/i.test(value);
+  if (hasRealTags) {
     return value;
   }
-  return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+
+  // URL/percent-encoded HTML: %3Cp%3E → <p>
+  if (/%3C[a-z/]/i.test(value)) {
+    try {
+      const decoded = decodeURIComponent(value);
+      if (/<[a-z/]/i.test(decoded)) {
+        return decoded;
+      }
+    } catch {
+      // malformed percent sequences — fall through
+    }
+  }
+
+  // HTML-entity-encoded: &lt;p&gt; → <p>
+  if (/&lt;[a-z/]/i.test(value)) {
+    return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
+  }
+
+  return value;
 }
 
 export function sanitizeRichText(input: unknown): string {
@@ -69,7 +88,7 @@ export function sanitizeRichText(input: unknown): string {
     return '';
   }
 
-  return sanitizeHtml(decodeHtmlEntitiesIfNeeded(html), {
+  return sanitizeHtml(decodeEncodedHtmlIfNeeded(html), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],
