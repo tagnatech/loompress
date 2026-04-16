@@ -60,7 +60,8 @@ function isHtmlLikeResponse(contentType: string, body: string): boolean {
 
 function installBasePathSupport(app: express.Express, fallbackBasePath: string): void {
   app.use((req, res, next) => {
-    const basePath = getRequestBasePath(req, fallbackBasePath);
+    const trustProxy = req.app.get('trust proxy');
+    const basePath = trustProxy ? getRequestBasePath(req, fallbackBasePath) : fallbackBasePath;
     res.locals.basePath = basePath;
 
     const originalRedirect = res.redirect.bind(res);
