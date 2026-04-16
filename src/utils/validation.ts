@@ -11,6 +11,16 @@ export const MENU_LOCATIONS = ['primary', 'footer', 'social'] as const;
 
 type TupleValue<T extends readonly string[]> = T[number];
 
+function trimTrailingChar(value: string, char: string): string {
+  let end = value.length;
+
+  while (end > 1 && value[end - 1] === char) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -88,7 +98,7 @@ export function normalizeBaseUrl(input: unknown): string {
     throw new Error('Base URL must not include a query string or fragment.');
   }
 
-  const pathname = parsed.pathname.replace(/\/+$/g, '');
+  const pathname = trimTrailingChar(parsed.pathname, '/');
   return `${parsed.origin}${pathname === '/' ? '' : pathname}`;
 }
 

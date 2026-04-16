@@ -636,6 +636,36 @@ function ensureTrailingSlash(value) {
   return value.endsWith('/') ? value : `${value}/`;
 }
 
+function collapseRepeatedSlashes(value) {
+  let result = '';
+  let previousWasSlash = false;
+
+  for (const char of value) {
+    if (char === '/') {
+      if (!previousWasSlash) {
+        result += char;
+      }
+      previousWasSlash = true;
+      continue;
+    }
+
+    result += char;
+    previousWasSlash = false;
+  }
+
+  return result;
+}
+
+function trimTrailingSlashes(value) {
+  let end = value.length;
+
+  while (end > 1 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
 function normalizeBasePath(value) {
   const normalized = String(value ?? '').trim();
   if (!normalized || normalized === '/') {
@@ -643,7 +673,7 @@ function normalizeBasePath(value) {
   }
 
   const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
-  return withLeadingSlash.replace(/\/{2,}/g, '/').replace(/\/+$/g, '');
+  return trimTrailingSlashes(collapseRepeatedSlashes(withLeadingSlash));
 }
 
 function prefixBasePath(value, basePath) {

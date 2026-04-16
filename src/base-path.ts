@@ -2,6 +2,36 @@ import type { Request } from 'express';
 
 const ABSOLUTE_URL_RE = /^[a-z][a-z\d+\-.]*:/i;
 
+function collapseRepeatedSlashes(value: string): string {
+  let result = '';
+  let previousWasSlash = false;
+
+  for (const char of value) {
+    if (char === '/') {
+      if (!previousWasSlash) {
+        result += char;
+      }
+      previousWasSlash = true;
+      continue;
+    }
+
+    result += char;
+    previousWasSlash = false;
+  }
+
+  return result;
+}
+
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+
+  while (end > 1 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
 export function normalizeBasePath(input: string | null | undefined): string {
   const raw = String(input ?? '').trim();
   if (!raw || raw === '/') {
@@ -22,7 +52,7 @@ export function normalizeBasePath(input: string | null | undefined): string {
     value = `/${value}`;
   }
 
-  value = value.replace(/\/{2,}/g, '/').replace(/\/+$/g, '');
+  value = trimTrailingSlashes(collapseRepeatedSlashes(value));
   return value === '/' ? '' : value;
 }
 

@@ -5,6 +5,7 @@ describe('base path helpers', () => {
   it('normalizes configured base paths', () => {
     expect(normalizeBasePath('blog')).toBe('/blog');
     expect(normalizeBasePath('/blog/')).toBe('/blog');
+    expect(normalizeBasePath('///blog///nested///')).toBe('/blog/nested');
     expect(normalizeBasePath('https://example.com/blog/')).toBe('/blog');
     expect(normalizeBasePath('/')).toBe('');
   });
