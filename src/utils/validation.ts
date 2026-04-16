@@ -11,6 +11,16 @@ export const MENU_LOCATIONS = ['primary', 'footer', 'social'] as const;
 
 type TupleValue<T extends readonly string[]> = T[number];
 
+function trimTrailingChar(value: string, char: string): string {
+  let end = value.length;
+
+  while (end > 1 && value[end - 1] === char) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -84,11 +94,12 @@ export function normalizeBaseUrl(input: unknown): string {
     throw new Error('Base URL must use http or https.');
   }
 
-  if ((parsed.pathname && parsed.pathname !== '/') || parsed.search || parsed.hash) {
-    throw new Error('Base URL must not include a path, query string, or fragment.');
+  if (parsed.search || parsed.hash) {
+    throw new Error('Base URL must not include a query string or fragment.');
   }
 
-  return parsed.origin;
+  const pathname = trimTrailingChar(parsed.pathname, '/');
+  return `${parsed.origin}${pathname === '/' ? '' : pathname}`;
 }
 
 export function assertBaseUrlMatchesHostname(hostname: string, baseUrl: string): void {

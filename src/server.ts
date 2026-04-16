@@ -5,6 +5,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import pg from 'pg';
 import { createNunjucksEngine, flashMiddleware, csrfMiddleware } from '@tagna/udiot/server';
+import { getBasePath, getRequestBasePath, prefixBasePath, prefixBasePathInHtml } from './base-path.js';
 import { getConfigPresence, loadConfig } from './config/index.js';
 import { loadEnvFile } from './config/env-file.js';
 import { getDatabaseClient } from './db/client.js';
@@ -48,6 +49,43 @@ let configuredApp: express.Express | null = null;
 let configuredAppPromise: Promise<express.Express> | null = null;
 let schedulerHandle: NodeJS.Timeout | null = null;
 
+function isHtmlLikeResponse(contentType: string, body: string): boolean {
+  const normalizedType = contentType.toLowerCase();
+  if (normalizedType.includes('text/html') || normalizedType.includes('application/xhtml+xml')) {
+    return true;
+  }
+
+  return /^\s*(?:<!doctype html\b|<html\b|<head\b|<body\b|<h1\b|<div\b|<form\b)/i.test(body);
+}
+
+function installBasePathSupport(app: express.Express, fallbackBasePath: string): void {
+  app.use((req, res, next) => {
+    const trustProxy = req.app.get('trust proxy');
+    const basePath = trustProxy ? getRequestBasePath(req, fallbackBasePath) : fallbackBasePath;
+    res.locals.basePath = basePath;
+
+    const originalRedirect = res.redirect.bind(res);
+    res.redirect = ((statusOrUrl: number | string, maybeUrl?: string) => {
+      if (typeof statusOrUrl === 'number') {
+        return originalRedirect(statusOrUrl, prefixBasePath(maybeUrl ?? '', basePath));
+      }
+
+      return originalRedirect(prefixBasePath(statusOrUrl, basePath));
+    }) as typeof res.redirect;
+
+    const originalSend = res.send.bind(res);
+    res.send = ((body?: any) => {
+      if (typeof body === 'string' && isHtmlLikeResponse(String(res.getHeader('Content-Type') ?? ''), body)) {
+        return originalSend(prefixBasePathInHtml(body, basePath));
+      }
+
+      return originalSend(body);
+    }) as typeof res.send;
+
+    next();
+  });
+}
+
 async function createConfiguredApp(): Promise<express.Express> {
   loadEnvFile();
   const config = loadConfig();
@@ -63,7 +101,9 @@ async function createConfiguredApp(): Promise<express.Express> {
 
   const app = express();
   app.set('trust proxy', config.trustProxy);
+  app.locals.basePath = config.basePath;
   ensureAssetsDirectories(config.assetsDir);
+  installBasePathSupport(app, config.basePath);
 
   app.locals.db = db;
   app.locals.pool = pool;
@@ -505,7 +545,10 @@ function createBootstrapApp(): express.Express {
   const app = express();
   const adminViewsDir = path.join(__dirname, 'admin', 'views');
   const assetsDir = path.resolve(process.env.ASSETS_DIR ?? './assets');
+  const basePath = getBasePath();
   ensureAssetsDirectories(assetsDir);
+  app.locals.basePath = basePath;
+  installBasePathSupport(app, basePath);
   const engine = createNunjucksEngine([adminViewsDir], {
     autoescape: true,
     throwOnUndefined: false,

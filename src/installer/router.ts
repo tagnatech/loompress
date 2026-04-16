@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import express, { Router, type Request, type RequestHandler, type Response } from 'express';
+import { detectExternalBaseUrl } from '../base-path.js';
 import { getConfigPresence } from '../config/index.js';
 import { loadEnvFile, writeEnvFile } from '../config/env-file.js';
 import { getDatabaseClient } from '../db/client.js';
@@ -14,11 +15,10 @@ interface InstallerValues {
 }
 
 function detectAdminBaseUrl(req: Request): string {
-  const forwardedProto = req.get('x-forwarded-proto');
-  const protocol = (forwardedProto ? forwardedProto.split(',')[0] : req.protocol).trim();
-  const forwardedHost = req.get('x-forwarded-host');
-  const host = (forwardedHost ?? req.get('host') ?? 'localhost').split(',')[0].trim();
-  return `${protocol}://${host}`;
+  const detected = new URL(detectExternalBaseUrl(req));
+  const host = (req.get('host') ?? 'localhost').split(',')[0].trim();
+  const pathname = detected.pathname === '/' ? '' : detected.pathname;
+  return `${req.protocol}://${host}${pathname}`;
 }
 
 function collectValues(body: Record<string, unknown>): InstallerValues {

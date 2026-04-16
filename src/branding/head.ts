@@ -1,3 +1,5 @@
+import { getBasePath, prefixBasePath } from '../base-path.js';
+
 type BrandLinkTag = {
   rel: string;
   href: string;
@@ -62,9 +64,10 @@ function renderMetaTag(tag: BrandMetaTag): string {
 }
 
 export function getBrandHeadHtml(logoUrl: string | null | undefined): string {
+  const basePath = getBasePath();
   const normalized = logoUrl?.trim();
   if (normalized) {
-    const escapedUrl = escapeAttribute(normalized);
+    const escapedUrl = escapeAttribute(prefixBasePath(normalized, basePath));
     return [
       `<link rel="icon" href="${escapedUrl}">`,
       `<link rel="apple-touch-icon" href="${escapedUrl}">`,
@@ -73,7 +76,13 @@ export function getBrandHeadHtml(logoUrl: string | null | undefined): string {
   }
 
   return [
-    ...DEFAULT_BRAND_LINKS.map(renderLinkTag),
-    ...DEFAULT_BRAND_META.map(renderMetaTag),
+    ...DEFAULT_BRAND_LINKS.map(tag => renderLinkTag({
+      ...tag,
+      href: prefixBasePath(tag.href, basePath),
+    })),
+    ...DEFAULT_BRAND_META.map(tag => renderMetaTag({
+      ...tag,
+      content: prefixBasePath(tag.content, basePath),
+    })),
   ].join('\n');
 }

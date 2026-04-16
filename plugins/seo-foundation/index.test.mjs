@@ -62,6 +62,50 @@ describe('seo foundation plugin helpers', () => {
     expect(result.context.seoHeadHtml).toContain('article:published_time');
   });
 
+  it('resolves root-relative asset URLs against a path-based install', () => {
+    const result = buildSeoRenderContext({
+      req: {
+        originalUrl: '/welcome',
+        url: '/welcome',
+        path: '/welcome',
+        params: {},
+        query: {},
+      },
+      site: {
+        name: 'Example Site',
+        base_url: 'https://example.com/blog',
+        logo_url: '/assets/logo.png',
+        tagline: 'Latest updates',
+      },
+      view: 'post',
+      options: {
+        post: {
+          type: 'post',
+          title: 'Welcome',
+          slug: 'welcome',
+          excerpt: 'A short summary',
+          body: '<p>Hello world</p>',
+          featured_image_url: '/uploads/cover.png',
+          author_name: 'Admin',
+          published_at: '2026-03-28T00:00:00.000Z',
+          updated_at: '2026-03-29T00:00:00.000Z',
+        },
+        categories: [{ name: 'News', slug: 'news' }],
+        tags: [{ name: 'Launch' }],
+        title: 'Welcome',
+      },
+      settings: {
+        titleSuffix: ' | Example Site',
+        defaultDescription: '',
+        noindexArchives: false,
+      },
+      basePath: '/blog',
+    });
+
+    expect(result.context.ogImage).toBe('https://example.com/blog/uploads/cover.png');
+    expect(result.context.seoHeadHtml).toContain('https://example.com/blog/assets/logo.png');
+  });
+
   it('builds a sitemap with posts, pages, categories, and tags', () => {
     const xml = buildSitemapXml({
       site: {

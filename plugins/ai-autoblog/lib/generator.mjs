@@ -443,7 +443,7 @@ async function createGeneratedImage({
     const media = await services.mediaService.create(site.id, authorId, {
       filename,
       storagePath,
-      publicUrl: `/uploads/autoblog/${siteSlug}/${filename}`,
+      publicUrl: prefixBasePath(`/uploads/autoblog/${siteSlug}/${filename}`, config.basePath),
       mimeType: image.mimeType,
       fileSize: image.buffer.length,
     });
@@ -611,4 +611,63 @@ function extensionFromMimeType(mimeType) {
   }
 
   return '.png';
+}
+
+function collapseRepeatedSlashes(value) {
+  let result = '';
+  let previousWasSlash = false;
+
+  for (const char of value) {
+    if (char === '/') {
+      if (!previousWasSlash) {
+        result += char;
+      }
+      previousWasSlash = true;
+      continue;
+    }
+
+    result += char;
+    previousWasSlash = false;
+  }
+
+  return result;
+}
+
+function trimTrailingSlashes(value) {
+  let end = value.length;
+
+  while (end > 1 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
+function normalizeBasePath(value) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized || normalized === '/') {
+    return '';
+  }
+
+  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  return trimTrailingSlashes(collapseRepeatedSlashes(withLeadingSlash));
+}
+
+function prefixBasePath(value, basePath) {
+  const normalized = String(value ?? '').trim();
+  const resolvedBasePath = normalizeBasePath(basePath);
+
+  if (
+    !normalized
+    || !resolvedBasePath
+    || /^[a-z][a-z\d+\-.]*:/i.test(normalized)
+    || normalized.startsWith('//')
+    || !normalized.startsWith('/')
+    || normalized === resolvedBasePath
+    || normalized.startsWith(`${resolvedBasePath}/`)
+  ) {
+    return normalized;
+  }
+
+  return `${resolvedBasePath}${normalized}`;
 }

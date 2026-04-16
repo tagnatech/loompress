@@ -14,13 +14,14 @@ describe('validation utilities', () => {
     expect(normalizeHostname('localhost')).toBe('localhost');
   });
 
-  it('rejects base URLs with extra path components', () => {
-    expect(() => normalizeBaseUrl('https://example.com/blog')).toThrow(/must not include a path/i);
+  it('allows path-based base URLs but rejects query strings', () => {
+    expect(normalizeBaseUrl('https://example.com/blog/')).toBe('https://example.com/blog');
+    expect(() => normalizeBaseUrl('https://example.com/blog?from=test')).toThrow(/must not include a query string/i);
   });
 
   it('requires base url hostname to match the site hostname', () => {
     expect(() => assertBaseUrlMatchesHostname('blog.example.com', 'https://www.example.com')).toThrow(/must match/i);
-    expect(() => assertBaseUrlMatchesHostname('blog.example.com', 'https://blog.example.com')).not.toThrow();
+    expect(() => assertBaseUrlMatchesHostname('blog.example.com', 'https://blog.example.com/blog')).not.toThrow();
   });
 
   it('sanitizes custom css to prevent style tag breakout', () => {
