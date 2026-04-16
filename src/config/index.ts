@@ -97,7 +97,7 @@ export function loadConfig(): Config {
     commentRateLimitWindowMs: parseInteger(process.env.COMMENT_RATE_LIMIT_WINDOW_MS, 10 * 60 * 1000),
     pluginsDir: path.resolve(process.env.PLUGINS_DIR ?? './plugins'),
     pluginEntries: parseList(process.env.PLUGINS).map(entry => path.resolve(entry)),
-    basePath: normalizeBasePath(process.env.BASE_PATH),
+    basePath: normalizeBasePath(process.env.BASE_PATH ?? process.env.ADMIN_BASE_URL),
     isDev: nodeEnv === 'development',
     isProd: nodeEnv === 'production',
   };

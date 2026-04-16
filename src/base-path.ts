@@ -135,8 +135,8 @@ export function prefixBasePathInHtml(html: string, basePath = getBasePath()): st
   );
 
   output = output.replace(
-    /(url\((["']?))(\/[^)"']*)/gi,
-    (_, prefix: string, quote: string, value: string) => `${prefix}${prefixBasePath(value, basePath)}`,
+    /(url\(\s*(["']?))(\/[^)"']*)/gi,
+    (_, prefix: string, _quote: string, value: string) => `${prefix}${prefixBasePath(value, basePath)}`,
   );
 
   return output;

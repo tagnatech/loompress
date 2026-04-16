@@ -80,7 +80,7 @@ export default {
           view,
           options: isPlainObject(renderOptions) ? renderOptions : {},
           settings,
-          basePath: config.basePath,
+          basePath: res.locals.basePath || config.basePath,
         });
 
         if (seoContext.xRobotsTag) {

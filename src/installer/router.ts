@@ -15,7 +15,10 @@ interface InstallerValues {
 }
 
 function detectAdminBaseUrl(req: Request): string {
-  return detectExternalBaseUrl(req);
+  const detected = new URL(detectExternalBaseUrl(req));
+  const host = (req.get('host') ?? 'localhost').split(',')[0].trim();
+  const pathname = detected.pathname === '/' ? '' : detected.pathname;
+  return `${req.protocol}://${host}${pathname}`;
 }
 
 function collectValues(body: Record<string, unknown>): InstallerValues {
