@@ -2,6 +2,7 @@ import { Router, type Request, type RequestHandler, type Response } from 'expres
 import type multer from 'multer';
 import type pg from 'pg';
 import { hashPassword } from '../auth/password.js';
+import { detectExternalBaseUrl } from '../base-path.js';
 import type { SiteRecord } from '../multi-site/types.js';
 import { getAvailableThemes } from '../public/theme-resolver.js';
 import type { SiteService } from '../services/SiteService.js';
@@ -64,11 +65,7 @@ interface CreatedUser {
 }
 
 function detectBaseUrl(req: Request): string {
-  const forwardedProto = req.get('x-forwarded-proto');
-  const protocol = (forwardedProto ? forwardedProto.split(',')[0] : req.protocol).trim();
-  const forwardedHost = req.get('x-forwarded-host');
-  const host = (forwardedHost ?? req.get('host') ?? 'localhost').split(',')[0].trim();
-  return `${protocol}://${host}`;
+  return detectExternalBaseUrl(req);
 }
 
 function collectValues(body: Record<string, unknown>): OnboardingValues {

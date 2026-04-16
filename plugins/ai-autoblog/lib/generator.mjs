@@ -443,7 +443,7 @@ async function createGeneratedImage({
     const media = await services.mediaService.create(site.id, authorId, {
       filename,
       storagePath,
-      publicUrl: `/uploads/autoblog/${siteSlug}/${filename}`,
+      publicUrl: prefixBasePath(`/uploads/autoblog/${siteSlug}/${filename}`, config.basePath),
       mimeType: image.mimeType,
       fileSize: image.buffer.length,
     });
@@ -611,4 +611,33 @@ function extensionFromMimeType(mimeType) {
   }
 
   return '.png';
+}
+
+function normalizeBasePath(value) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized || normalized === '/') {
+    return '';
+  }
+
+  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  return withLeadingSlash.replace(/\/{2,}/g, '/').replace(/\/+$/g, '');
+}
+
+function prefixBasePath(value, basePath) {
+  const normalized = String(value ?? '').trim();
+  const resolvedBasePath = normalizeBasePath(basePath);
+
+  if (
+    !normalized
+    || !resolvedBasePath
+    || /^[a-z][a-z\d+\-.]*:/i.test(normalized)
+    || normalized.startsWith('//')
+    || !normalized.startsWith('/')
+    || normalized === resolvedBasePath
+    || normalized.startsWith(`${resolvedBasePath}/`)
+  ) {
+    return normalized;
+  }
+
+  return `${resolvedBasePath}${normalized}`;
 }

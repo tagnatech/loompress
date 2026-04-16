@@ -18,4 +18,22 @@ describe('brand head html', () => {
     expect(html).toContain('rel="apple-touch-icon" href="/uploads/site/logo.png"');
     expect(html).not.toContain('/manifest.json');
   });
+
+  it('prefixes bundled assets when BASE_PATH is set', () => {
+    const previousBasePath = process.env.BASE_PATH;
+    process.env.BASE_PATH = '/blog';
+
+    try {
+      const html = getBrandHeadHtml(null);
+      expect(html).toContain('href="/blog/apple-icon-180x180.png"');
+      expect(html).toContain('href="/blog/favicon.ico"');
+      expect(html).toContain('content="/blog/browserconfig.xml"');
+    } finally {
+      if (previousBasePath === undefined) {
+        delete process.env.BASE_PATH;
+      } else {
+        process.env.BASE_PATH = previousBasePath;
+      }
+    }
+  });
 });

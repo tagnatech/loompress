@@ -84,11 +84,12 @@ export function normalizeBaseUrl(input: unknown): string {
     throw new Error('Base URL must use http or https.');
   }
 
-  if ((parsed.pathname && parsed.pathname !== '/') || parsed.search || parsed.hash) {
-    throw new Error('Base URL must not include a path, query string, or fragment.');
+  if (parsed.search || parsed.hash) {
+    throw new Error('Base URL must not include a query string or fragment.');
   }
 
-  return parsed.origin;
+  const pathname = parsed.pathname.replace(/\/+$/g, '');
+  return `${parsed.origin}${pathname === '/' ? '' : pathname}`;
 }
 
 export function assertBaseUrlMatchesHostname(hostname: string, baseUrl: string): void {

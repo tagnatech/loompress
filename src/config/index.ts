@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { normalizeBasePath } from '../base-path.js';
 
 export interface Config {
   port: number;
@@ -16,6 +17,7 @@ export interface Config {
   commentRateLimitWindowMs: number;
   pluginsDir: string;
   pluginEntries: string[];
+  basePath: string;
   isDev: boolean;
   isProd: boolean;
 }
@@ -95,6 +97,7 @@ export function loadConfig(): Config {
     commentRateLimitWindowMs: parseInteger(process.env.COMMENT_RATE_LIMIT_WINDOW_MS, 10 * 60 * 1000),
     pluginsDir: path.resolve(process.env.PLUGINS_DIR ?? './plugins'),
     pluginEntries: parseList(process.env.PLUGINS).map(entry => path.resolve(entry)),
+    basePath: normalizeBasePath(process.env.BASE_PATH),
     isDev: nodeEnv === 'development',
     isProd: nodeEnv === 'production',
   };

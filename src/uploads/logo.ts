@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import type { Request } from 'express';
+import { prefixBasePath } from '../base-path.js';
 import { isSafeUploadedImage } from './signature.js';
 
 export interface UploadedLogo {
@@ -29,7 +30,7 @@ export async function resolveUploadedLogo(req: Request): Promise<UploadedLogo | 
 
   return {
     file,
-    publicUrl: `/uploads/${subDir}/${file.filename}`,
+    publicUrl: prefixBasePath(`/uploads/${subDir}/${file.filename}`),
   };
 }
 

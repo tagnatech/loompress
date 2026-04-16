@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import type { MediaService } from '../../services/MediaService.js';
 import fs from 'node:fs/promises';
 import { param } from '@tagna/udiot/server';
+import { prefixBasePath } from '../../base-path.js';
 import { isSafeUploadedImage } from '../../uploads/signature.js';
 import { normalizeOptionalText } from '../../utils/validation.js';
 
@@ -39,7 +40,7 @@ export function mediaController(mediaService: MediaService) {
     }
 
     const subDir = (req as any)._uploadSubDir ?? '';
-    const publicUrl = `/uploads/${subDir}/${file.filename}`;
+    const publicUrl = prefixBasePath(`/uploads/${subDir}/${file.filename}`);
 
     await mediaService.create(siteId, userId, {
       filename: file.originalname,

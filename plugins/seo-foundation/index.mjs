@@ -11,7 +11,7 @@ export default {
   setup(ctx) {
     ctx.logger.info('registered bundled SEO extension');
   },
-  registerPublicRoutes({ router, services, pool }) {
+  registerPublicRoutes({ router, services, pool, config }) {
     router.get('/robots.txt', (req, res) => {
       const site = req.site;
       if (!site) {
@@ -80,6 +80,7 @@ export default {
           view,
           options: isPlainObject(renderOptions) ? renderOptions : {},
           settings,
+          basePath: config.basePath,
         });
 
         if (seoContext.xRobotsTag) {
@@ -122,11 +123,11 @@ export async function getSeoSettings(settingsService, siteId) {
   return value;
 }
 
-export function buildSeoRenderContext({ req, site, view, options, settings }) {
+export function buildSeoRenderContext({ req, site, view, options, settings, basePath = '' }) {
   const canonicalPath = buildCanonicalPath(req);
   const canonicalUrl = toAbsoluteUrl(canonicalPath, site.base_url);
   const page = parsePageNumber(options, req);
-  const imageUrl = resolveSeoImage(site, options);
+  const imageUrl = resolveSeoImage(site, options, basePath);
   const description = resolveDescription({ view, site, options, settings, page });
   const title = appendTitleSuffix(resolveTitle({ view, site, options, page }), settings.titleSuffix);
   const metaRobots = resolveRobots({ view, page, settings });
@@ -138,6 +139,7 @@ export function buildSeoRenderContext({ req, site, view, options, settings }) {
     title,
     description,
     imageUrl,
+    basePath,
   });
 
   return {
@@ -288,9 +290,9 @@ function buildSeoHeadHtml({ site, title, description, imageUrl, metaRobots, sche
   return tags.join('\n');
 }
 
-function buildSchemaGraph({ view, site, options, canonicalUrl, title, description, imageUrl }) {
+function buildSchemaGraph({ view, site, options, canonicalUrl, title, description, imageUrl, basePath }) {
   const breadcrumbs = buildBreadcrumbs({ view, site, options, canonicalUrl });
-  const publisherLogoUrl = toAbsoluteUrl(site.logo_url, site.base_url);
+  const publisherLogoUrl = toAbsoluteUrl(site.logo_url, site.base_url, basePath);
   const graph = [];
 
   if (breadcrumbs.length > 1) {
@@ -537,12 +539,12 @@ function resolveRobots({ view, page, settings }) {
   return INDEXABLE_ROBOTS;
 }
 
-function resolveSeoImage(site, options) {
+function resolveSeoImage(site, options, basePath) {
   const candidate = options.ogImage
     || options.post?.featured_image_url
     || site.logo_url;
 
-  return toAbsoluteUrl(candidate, site.base_url);
+  return toAbsoluteUrl(candidate, site.base_url, basePath);
 }
 
 function appendTitleSuffix(title, suffix) {
@@ -615,11 +617,13 @@ function normalizePageOnePath(pathname) {
   return pathname || '/';
 }
 
-function toAbsoluteUrl(value, baseUrl) {
-  const normalized = normalizeText(value);
+function toAbsoluteUrl(value, baseUrl, basePath = '') {
+  let normalized = normalizeText(value);
   if (!normalized) {
     return null;
   }
+
+  normalized = prefixBasePath(normalized, basePath);
 
   try {
     return new URL(normalized, ensureTrailingSlash(baseUrl)).toString();
@@ -630,6 +634,35 @@ function toAbsoluteUrl(value, baseUrl) {
 
 function ensureTrailingSlash(value) {
   return value.endsWith('/') ? value : `${value}/`;
+}
+
+function normalizeBasePath(value) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized || normalized === '/') {
+    return '';
+  }
+
+  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  return withLeadingSlash.replace(/\/{2,}/g, '/').replace(/\/+$/g, '');
+}
+
+function prefixBasePath(value, basePath) {
+  const normalized = normalizeText(value);
+  const resolvedBasePath = normalizeBasePath(basePath);
+
+  if (
+    !normalized
+    || !resolvedBasePath
+    || /^[a-z][a-z\d+\-.]*:/i.test(normalized)
+    || normalized.startsWith('//')
+    || !normalized.startsWith('/')
+    || normalized === resolvedBasePath
+    || normalized.startsWith(`${resolvedBasePath}/`)
+  ) {
+    return normalized;
+  }
+
+  return `${resolvedBasePath}${normalized}`;
 }
 
 function escapeHtml(value) {

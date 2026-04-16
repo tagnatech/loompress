@@ -26,4 +26,9 @@ describe('site logo defaults', () => {
     expect(DEFAULT_SITE_LOGO_URL).toBe('/apple-icon-180x180.png');
     expect(DEFAULT_SITE_FAVICON_URL).toBe('/favicon.ico');
   });
+
+  it('prefixes root-relative paths when a base path is configured', () => {
+    expect(getSiteLogoUrl('/uploads/site/logo.png', '/blog')).toBe('/blog/uploads/site/logo.png');
+    expect(getSiteFaviconUrl(null, '/blog')).toBe('/blog/favicon.ico');
+  });
 });
