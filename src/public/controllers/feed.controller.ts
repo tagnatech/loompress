@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import type { PostService } from '../../services/PostService.js';
-import { sanitizeRichText } from '../../utils/html.js';
+import { sanitizeRichText, stripHtml } from '../../utils/html.js';
 
 function escapeXml(str: string): string {
   return str
@@ -22,12 +22,13 @@ export function feedController(postService: PostService) {
 
     const items = posts.map(post => {
       const link = `${site.base_url}/${post.slug}`;
+      const excerpt = stripHtml(post.excerpt, 320);
       return `    <item>
       <title>${escapeXml(post.title)}</title>
       <link>${escapeXml(link)}</link>
       <guid isPermaLink="true">${escapeXml(link)}</guid>
       <pubDate>${post.published_at ? toRfc2822(new Date(post.published_at)) : ''}</pubDate>
-      <description>${escapeXml(post.excerpt || '')}</description>
+      <description>${escapeXml(excerpt || '')}</description>
       <content:encoded><![CDATA[${sanitizeRichText(post.body)}]]></content:encoded>
     </item>`;
     }).join('\n');
