@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import type { PostService } from '../../services/PostService.js';
-import { sanitizeRichText } from '../../utils/html.js';
+import { sanitizeRichText, stripHtml } from '../../utils/html.js';
 
 function escapeXml(str: string): string {
   return str
@@ -15,6 +15,10 @@ function toRfc2822(date: Date): string {
   return date.toUTCString();
 }
 
+export function escapeCdata(value: string): string {
+  return value.replace(/]]>/g, ']]]]><![CDATA[>');
+}
+
 export function feedController(postService: PostService) {
   const rss: RequestHandler = async (req, res) => {
     const site = req.site!;
@@ -22,13 +26,14 @@ export function feedController(postService: PostService) {
 
     const items = posts.map(post => {
       const link = `${site.base_url}/${post.slug}`;
+      const excerpt = stripHtml(post.excerpt, 320);
       return `    <item>
       <title>${escapeXml(post.title)}</title>
       <link>${escapeXml(link)}</link>
       <guid isPermaLink="true">${escapeXml(link)}</guid>
       <pubDate>${post.published_at ? toRfc2822(new Date(post.published_at)) : ''}</pubDate>
-      <description>${escapeXml(post.excerpt || '')}</description>
-      <content:encoded><![CDATA[${sanitizeRichText(post.body)}]]></content:encoded>
+      <description>${escapeXml(excerpt || '')}</description>
+      <content:encoded><![CDATA[${escapeCdata(sanitizeRichText(post.body))}]]></content:encoded>
     </item>`;
     }).join('\n');
 
