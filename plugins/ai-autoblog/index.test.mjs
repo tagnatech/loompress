@@ -35,6 +35,19 @@ describe('ai autoblog helpers', () => {
     expect(result.bodyHtml).toContain('<h2>');
   });
 
+  it('normalizes mixed percent and entity encoded generated content', () => {
+    const result = normalizeGeneratedPost({
+      title: 'Encoded AI Post',
+      excerpt: '%26lt%3Bp%26gt%3BEncoded%20excerpt%26lt%3B%2Fp%26gt%3B',
+      metaDescription: '%26lt%3Bp%26gt%3BEncoded%20description%26lt%3B%2Fp%26gt%3B',
+      bodyHtml: '%3Cdiv%3E%26lt%3Bp%26gt%3BInside%26lt%3B%2Fp%26gt%3B%3C%2Fdiv%3E',
+    });
+
+    expect(result.excerpt).toBe('Encoded excerpt');
+    expect(result.metaDescription).toBe('Encoded description');
+    expect(result.bodyHtml).toBe('<div><p>Inside</p></div>');
+  });
+
   it('parses image data urls from OpenRouter responses', () => {
     const payload = parseDataUrl('data:image/png;base64,aGVsbG8=');
 

@@ -262,23 +262,40 @@ function decodeHtmlEntities(value: string): string {
   return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
 }
 
+function decodeHtmlMarkupCandidate(value: string): string | null {
+  const decoded = decodeHtmlEntities(value);
+  return /<[a-z/]/i.test(decoded) ? decoded : null;
+}
+
+function decodeHtmlForPlainText(value: string): string {
+  if (/%[0-9a-f]{2}/i.test(value)) {
+    const decoded = decodeHtmlMarkupCandidate(decodePercentEncodedText(value));
+    if (decoded) {
+      return decoded;
+    }
+  }
+
+  return decodeHtmlEntities(value);
+}
+
 function decodeEncodedHtmlIfNeeded(value: string): string {
   const hasRealTags = /<[a-z/]/i.test(value);
   if (hasRealTags) {
     return value;
   }
 
-  // URL/percent-encoded HTML: %3Cp%3E → <p>
-  if (/%3C[a-z/]/i.test(value)) {
-    const decoded = decodePercentEncodedText(value);
-    if (/<[a-z/]/i.test(decoded)) {
+  // URL/percent-encoded HTML: %3Cp%3E or %26lt%3Bp%26gt%3B → <p>
+  if (/%[0-9a-f]{2}/i.test(value)) {
+    const decoded = decodeHtmlMarkupCandidate(decodePercentEncodedText(value));
+    if (decoded) {
       return decoded;
     }
   }
 
   // HTML-entity-encoded: &lt;p&gt; → <p>
-  if (/&lt;[a-z/]/i.test(value)) {
-    return decodeHtmlEntities(value);
+  const decoded = decodeHtmlMarkupCandidate(value);
+  if (decoded) {
+    return decoded;
   }
 
   return value;
@@ -310,11 +327,7 @@ export function stripHtml(input: unknown, maxLength = 500): string {
     return '';
   }
 
-  const decoded = /%[0-9a-f]{2}/i.test(value)
-    ? decodePercentEncodedText(value)
-    : decodeHtmlEntities(value);
-
-  return sanitizeHtml(decoded, {
+  return sanitizeHtml(decodeHtmlForPlainText(value), {
     allowedTags: [],
     allowedAttributes: {},
   }).slice(0, maxLength);

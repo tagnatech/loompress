@@ -690,21 +690,38 @@ function decodeHtmlEntities(value) {
   return value.replace(ENTITY_RE, (match) => ENTITY_MAP[match] ?? match);
 }
 
+function decodeHtmlMarkupCandidate(value) {
+  const decoded = decodeHtmlEntities(value);
+  return /<[a-z/]/i.test(decoded) ? decoded : null;
+}
+
+function decodeHtmlForPlainText(value) {
+  if (/%[0-9a-f]{2}/i.test(value)) {
+    const decoded = decodeHtmlMarkupCandidate(decodePercentEncodedText(value));
+    if (decoded) {
+      return decoded;
+    }
+  }
+
+  return decodeHtmlEntities(value);
+}
+
 function decodeEncodedHtmlIfNeeded(value) {
   const hasRealTags = /<[a-z/]/i.test(value);
   if (hasRealTags) {
     return value;
   }
 
-  if (/%3C[a-z/]/i.test(value)) {
-    const decoded = decodePercentEncodedText(value);
-    if (/<[a-z/]/i.test(decoded)) {
+  if (/%[0-9a-f]{2}/i.test(value)) {
+    const decoded = decodeHtmlMarkupCandidate(decodePercentEncodedText(value));
+    if (decoded) {
       return decoded;
     }
   }
 
-  if (/&lt;[a-z/]/i.test(value)) {
-    return decodeHtmlEntities(value);
+  const decoded = decodeHtmlMarkupCandidate(value);
+  if (decoded) {
+    return decoded;
   }
 
   return value;
@@ -732,11 +749,8 @@ function sanitizeRichText(input) {
 
 function stripHtml(input) {
   const value = sanitizeMultiline(input, 5_000);
-  const decoded = /%[0-9a-f]{2}/i.test(value)
-    ? decodePercentEncodedText(value)
-    : decodeHtmlEntities(value);
 
-  return sanitizeHtml(decoded, {
+  return sanitizeHtml(decodeHtmlForPlainText(value), {
     allowedTags: [],
     allowedAttributes: {},
   });
